@@ -49,6 +49,16 @@ app.use('/api/simulation', simulationRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/metrics', metricsRoutes);
 
+app.get('/', (req, res) => {
+  res.json({
+    status: 'HEALTHY',
+    service: 'RecoverOS Revenue Recovery API',
+    version: '1.0.0',
+    aiMode: ENV.AI_MODE,
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'HEALTHY',
@@ -63,7 +73,7 @@ app.use(errorHandler);
 async function startServer() {
   await connectDB();
   app.listen(ENV.PORT, '0.0.0.0', () => {
-    console.log(`[RecoverOS Server] Listening on http://127.0.0.1:${ENV.PORT} (AI_MODE: ${ENV.AI_MODE})`);
+    console.log(`server is listening on ${ENV.PORT} (AI_MODE: ${ENV.AI_MODE})`);
   });
 }
 
