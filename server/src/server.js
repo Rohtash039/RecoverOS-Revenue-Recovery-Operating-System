@@ -10,6 +10,8 @@ import simulationRoutes from './routes/simulationRoutes.js';
 import auditRoutes from './routes/auditRoutes.js';
 
 import { globalLimiter } from './middleware/rateLimiter.js';
+import { requestLogger } from './middleware/requestLogger.js';
+import metricsRoutes from './routes/metricsRoutes.js';
 
 const app = express();
 
@@ -19,6 +21,7 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use(requestLogger);
 app.use(globalLimiter);
 
 // API Routes
@@ -26,6 +29,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/recovery-cases', recoveryCaseRoutes);
 app.use('/api/simulation', simulationRoutes);
 app.use('/api/audit-logs', auditRoutes);
+app.use('/api/metrics', metricsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
