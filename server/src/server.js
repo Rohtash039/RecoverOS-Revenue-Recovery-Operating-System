@@ -49,6 +49,22 @@ app.use('/api/simulation', simulationRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/metrics', metricsRoutes);
 
+app.get('/', (req, res) => {
+  res.json({
+    status: 'HEALTHY',
+    service: 'RecoverOS Autonomous Revenue Recovery Engine API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      dashboard: '/api/dashboard/summary',
+      recoveryCases: '/api/recovery-cases',
+      simulation: '/api/simulation/batch-run',
+      auditLogs: '/api/audit-logs'
+    },
+    timestamp: new Date()
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'HEALTHY',

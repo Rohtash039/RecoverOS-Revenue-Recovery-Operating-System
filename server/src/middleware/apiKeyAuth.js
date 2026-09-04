@@ -3,17 +3,6 @@ import { recordAuditLog } from '../services/audit/auditService.js';
 import { AUDIT_ACTORS } from '../config/constants.js';
 
 export async function apiKeyAuth(req, res, next) {
-
-  if (ENV.NODE_ENV === 'production' && !ENV.API_KEY) {
-    return res.status(500).json({
-      success: false,
-      error: {
-        code: 'SERVER_MISCONFIGURED',
-        message: 'API_KEY must be configured in production environment.'
-      }
-    });
-  }
-
   if (!ENV.API_KEY) {
     return next();
   }
