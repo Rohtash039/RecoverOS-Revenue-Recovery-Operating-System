@@ -524,7 +524,7 @@ All metrics on the dashboard are **dynamically computed directly from MongoDB co
 
 ## 10. Project Directory Structure
 
-```
+```text
 RecoverOS/
 ├── client/                               # Frontend Single Page Application
 │   ├── src/
@@ -570,7 +570,6 @@ RecoverOS/
 ├── .env.example                          # Environment Variables Template
 ├── .gitignore                            # Exclusion Rules
 ├── README.md                             # Production Technical Documentation
-└── package.json                          # Monorepo Orchestration Scripts
 ```
 
 ---
