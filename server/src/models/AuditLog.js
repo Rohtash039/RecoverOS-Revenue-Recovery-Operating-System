@@ -17,6 +17,8 @@ const auditLogSchema = new mongoose.Schema({
   stateAfter: { type: String },
   financialImpact: { type: Number, default: 0 },
   payload: { type: mongoose.Schema.Types.Mixed },
+  previousHash: { type: String, required: true },
+  entryHash: { type: String, required: true, index: true },
   timestamp: { type: Date, default: Date.now, index: true }
 });
 

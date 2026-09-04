@@ -2,23 +2,79 @@ import React, { useState } from 'react';
 import { ActorBadge } from '../common/Badge';
 import { formatDate, formatINR } from '../../utils/formatters';
 import { AuditPayloadDrawer } from './AuditPayloadDrawer';
-import { FileText, Filter, Eye } from 'lucide-react';
+import { FileText, Filter, Eye, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
+import { RecoverOSAPI } from '../../api/client';
 
 export function AuditLogTable({ auditLogs = [], actorFilter, onActorFilterChange }) {
   const [selectedLog, setSelectedLog] = useState(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationResult, setVerificationResult] = useState(null);
 
   const actors = ['ALL', 'SYSTEM', 'AI_AGENT', 'POLICY_ENGINE', 'SIMULATOR', 'HUMAN'];
+
+  const handleVerifyChain = async () => {
+    try {
+      setIsVerifying(true);
+      const res = await RecoverOSAPI.verifyAuditChain();
+      setVerificationResult(res);
+    } catch (err) {
+      console.error('[Chain Verification Error]', err);
+      setVerificationResult({ valid: false, reason: err.message });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   return (
     <div className="flex-1 min-h-0 flex flex-col space-y-3.5 overflow-hidden">
       {/* Header & Filter */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
         <div>
-          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-            <span>Append-Only Compliance Audit Ledger</span>
-          </h2>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Complete record of all system, policy, and human decisions</p>
+          <div className="flex items-center gap-3">
+            <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+              <span>Append-Only Compliance Audit Ledger</span>
+            </h2>
+            <button
+              onClick={handleVerifyChain}
+              disabled={isVerifying}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-mono font-medium border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/80 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 transition-colors disabled:opacity-50"
+            >
+              {isVerifying ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin text-neutral-600 dark:text-neutral-400" />
+                  <span>Verifying Chain...</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                  <span>Verify Chain Integrity</span>
+                </>
+              )}
+            </button>
+          </div>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">Cryptographically linked SHA-256 audit ledger</p>
+            {verificationResult && (
+              <span className={`text-[11px] font-mono px-2 py-0.5 rounded border inline-flex items-center gap-1 ${
+                verificationResult.valid 
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60'
+                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800/60'
+              }`}>
+                {verificationResult.valid ? (
+                  <>
+                    <ShieldCheck className="w-3 h-3" />
+                    <span>Valid: {verificationResult.verifiedCount}/{verificationResult.totalEntries} hashes verified</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="w-3 h-3" />
+                    <span>Broken at {verificationResult.brokenAtAuditId}</span>
+                  </>
+                )}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Actor Filter Pills */}

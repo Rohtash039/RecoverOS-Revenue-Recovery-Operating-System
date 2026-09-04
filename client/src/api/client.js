@@ -65,5 +65,10 @@ export const RecoverOSAPI = {
   getAgentActivity: async (limit = 30) => {
     const res = await api.get('/audit-logs/activity', { params: { limit } });
     return res.data.data;
+  },
+
+  verifyAuditChain: async () => {
+    const res = await api.get('/audit-logs/verify-chain');
+    return res.data.data;
   }
 };

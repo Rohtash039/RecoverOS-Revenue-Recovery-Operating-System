@@ -1,4 +1,17 @@
 import { AuditLog } from '../models/AuditLog.js';
+import { verifyAuditChainIntegrity } from '../services/audit/auditService.js';
+
+export async function verifyAuditChain(req, res, next) {
+  try {
+    const result = await verifyAuditChainIntegrity();
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 
 export async function getAuditLogs(req, res, next) {
   try {
