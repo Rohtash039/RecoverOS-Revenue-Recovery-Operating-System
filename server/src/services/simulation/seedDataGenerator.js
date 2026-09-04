@@ -14,6 +14,7 @@ import {
 } from '../../config/constants.js';
 import { calculateROS } from '../scoring/opportunityScorer.js';
 import { recordAuditLog } from '../audit/auditService.js';
+import { invalidateAnalyticsCache } from '../analytics/analyticsService.js';
 
 /**
  * Deterministic pseudo-random number generator (Mulberry32)
@@ -40,6 +41,7 @@ const LAST_NAMES = ['Sharma', 'Verma', 'Patel', 'Reddy', 'Mehta', 'Nair', 'Iyer'
  * Generates 100 calibrated synthetic transactions and resets DB to clean AT_RISK state.
  */
 export async function generateSeedDataset(seedKey = DEFAULT_SIMULATION_SEED) {
+  invalidateAnalyticsCache();
   const prng = createPrng(seedKey);
 
   // Clear existing collections to guarantee clean demo baseline

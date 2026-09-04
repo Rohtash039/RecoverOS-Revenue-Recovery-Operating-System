@@ -6,6 +6,7 @@ import { simulateExecutionOutcome } from '../simulation/seededSimulator.js';
 import { executeWithIdempotency } from './idempotency.js';
 import { recordAuditLog } from '../audit/auditService.js';
 import { validateStateTransition } from './stateMachine.js';
+import { invalidateAnalyticsCache } from '../analytics/analyticsService.js';
 
 /**
  * Executes the complete bounded recovery lifecycle for a single case.
@@ -236,6 +237,7 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
 
   recoveryCase.updatedAt = new Date();
   await recoveryCase.save();
+  invalidateAnalyticsCache();
   return recoveryCase;
 }
 
@@ -275,6 +277,7 @@ export async function handleHumanAction(recoveryCase, transaction, actionType, o
 
     recoveryCase.updatedAt = new Date();
     await recoveryCase.save();
+    invalidateAnalyticsCache();
     return recoveryCase;
   }
 
@@ -376,6 +379,7 @@ export async function handleHumanAction(recoveryCase, transaction, actionType, o
 
     recoveryCase.updatedAt = new Date();
     await recoveryCase.save();
+    invalidateAnalyticsCache();
     return recoveryCase;
   }
 

@@ -62,4 +62,7 @@ const recoveryCaseSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
+// Compound index for hot queue queries filtering by state and sorting by recoveryScore
+recoveryCaseSchema.index({ state: 1, recoveryScore: -1 });
+
 export const RecoveryCase = mongoose.model('RecoveryCase', recoveryCaseSchema);

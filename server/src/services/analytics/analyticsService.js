@@ -2,10 +2,25 @@ import { RecoveryCase } from '../../models/RecoveryCase.js';
 import { RecoveryAction } from '../../models/RecoveryAction.js';
 import { CASE_STATES, DIAGNOSIS_CATEGORIES } from '../../config/constants.js';
 
+let cachedAnalytics = null;
+let lastCacheTime = 0;
+const CACHE_TTL_MS = 5000;
+
+export function invalidateAnalyticsCache() {
+  cachedAnalytics = null;
+  lastCacheTime = 0;
+}
+
 /**
  * Calculates authoritative financial analytics dynamically from raw MongoDB records.
+ * Uses 5-second in-memory caching with automatic invalidation on mutating recovery actions.
  */
-export async function getDashboardAnalytics() {
+export async function getDashboardAnalytics(forceRefresh = false) {
+  const now = Date.now();
+  if (!forceRefresh && cachedAnalytics && (now - lastCacheTime < CACHE_TTL_MS)) {
+    return cachedAnalytics;
+  }
+
   const cases = await RecoveryCase.find({});
   const totalActions = await RecoveryAction.countDocuments({});
 
@@ -102,7 +117,7 @@ export async function getDashboardAnalytics() {
     ? Number(((recoveredCount / executedCount) * 100).toFixed(2)) 
     : 0;
 
-  return {
+  const result = {
     initialRevenueAtRisk,
     recoveredRevenue,
     remainingRevenueAtRisk,
@@ -129,4 +144,8 @@ export async function getDashboardAnalytics() {
     interventionEfficiency,
     totalActionsRecorded: totalActions
   };
+
+  cachedAnalytics = result;
+  lastCacheTime = Date.now();
+  return result;
 }

@@ -5,6 +5,7 @@ import { SimulationBatch } from '../../models/SimulationBatch.js';
 import { CASE_STATES, AUDIT_ACTORS } from '../../config/constants.js';
 import { processCaseWorkflow } from '../workflow/workflowEngine.js';
 import { recordAuditLog } from '../audit/auditService.js';
+import { invalidateAnalyticsCache } from '../analytics/analyticsService.js';
 
 let activeBatchAbortController = null;
 let activeBatchPromise = null;
@@ -140,7 +141,10 @@ async function runBatchLoop(batch, cases, startIndex, delayMs, signal) {
       // Skip if already in terminal state
       if ([CASE_STATES.RECOVERED, CASE_STATES.STOPPED, CASE_STATES.EXPIRED].includes(rc.state)) {
         batch.processedCases++;
-        if (rc.state === CASE_STATES.RECOVERED) batch.recoveredCases++;
+        if (rc.state === CASE_STATES.RECOVERED) {
+          batch.recoveredCases++;
+          batch.recoveredAmount += (rc.recoveredAmount || 0);
+        }
         if (rc.state === CASE_STATES.STOPPED) batch.stoppedCases++;
         batch.lastProcessedCaseId = rc.recoveryCaseId;
         batch.checkpointIndex = batch.processedCases;
@@ -187,11 +191,13 @@ async function runBatchLoop(batch, cases, startIndex, delayMs, signal) {
     batch.completedAt = new Date();
     batch.updatedAt = new Date();
     await batch.save();
+    invalidateAnalyticsCache();
   } catch (err) {
     console.error(`[Batch Orchestrator Error] ${err.message}`, err);
     batch.status = 'FAILED';
     batch.updatedAt = new Date();
     await batch.save();
+    invalidateAnalyticsCache();
   } finally {
     activeBatchPromise = null;
   }

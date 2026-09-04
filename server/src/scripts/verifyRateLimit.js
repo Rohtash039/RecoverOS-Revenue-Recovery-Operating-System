@@ -86,9 +86,9 @@ async function runRateLimitVerification() {
     );
 
   } finally {
-    await mongoose.disconnect();
     await new Promise((resolve) => server.close(resolve));
-    process.exit(failed > 0 ? 1 : 0);
+    await mongoose.disconnect();
+    process.exitCode = failed > 0 ? 1 : 0;
   }
 }
 
