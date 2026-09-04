@@ -1,4 +1,4 @@
-import { startBatchRun, getBatchStatus } from '../services/simulation/batchOrchestrator.js';
+import { startBatchRun, getBatchStatus, resumeBatchRun } from '../services/simulation/batchOrchestrator.js';
 import { generateSeedDataset } from '../services/simulation/seedDataGenerator.js';
 import { ENV } from '../config/env.js';
 
@@ -6,6 +6,21 @@ export async function runBatchSimulation(req, res, next) {
   try {
     const { speed = 'ANIMATED' } = req.body;
     const batch = await startBatchRun(speed);
+
+    res.json({
+      success: true,
+      data: batch
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function resumeSimulationBatch(req, res, next) {
+  try {
+    const { batchId } = req.params;
+    const { speed = 'FAST' } = req.body || {};
+    const batch = await resumeBatchRun(batchId, speed);
 
     res.json({
       success: true,

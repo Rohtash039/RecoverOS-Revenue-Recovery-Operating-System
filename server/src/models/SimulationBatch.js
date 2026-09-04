@@ -9,7 +9,10 @@ const simulationBatchSchema = new mongoose.Schema({
   escalatedCases: { type: Number, default: 0 },
   stoppedCases: { type: Number, default: 0 },
   recoveredAmount: { type: Number, default: 0 },
+  lastProcessedCaseId: { type: String, default: null },
+  checkpointIndex: { type: Number, default: 0 },
   startedAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
   completedAt: { type: Date }
 });
 
