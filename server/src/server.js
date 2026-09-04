@@ -9,6 +9,8 @@ import recoveryCaseRoutes from './routes/recoveryCaseRoutes.js';
 import simulationRoutes from './routes/simulationRoutes.js';
 import auditRoutes from './routes/auditRoutes.js';
 
+import { globalLimiter } from './middleware/rateLimiter.js';
+
 const app = express();
 
 // Security & Middleware
@@ -17,6 +19,7 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use(globalLimiter);
 
 // API Routes
 app.use('/api/dashboard', dashboardRoutes);
