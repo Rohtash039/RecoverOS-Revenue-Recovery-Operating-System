@@ -1,42 +1,52 @@
 # RecoverOS
 
-> > **AI-Native Revenue Recovery Operating System**
+> **AI-Native Revenue Recovery Operating System**
 > *Detects revenue at risk, diagnoses root causes with Grok-2 or a deterministic fallback, selects bounded recovery actions under deterministic policy guardrails, executes safely, and records every decision and recovery outcome in a tamper-evident audit trail.*
 
-[![Node.js](https://img.shields.io/badge/Node.js-v20%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)]()
-[![React](https://img.shields.io/badge/React-v18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black)]()
-[![MongoDB](https://img.shields.io/badge/MongoDB-v6%2B-47A248?style=for-the-badge&logo=mongodb&logoColor=white)]()
-[![xAI Grok](https://img.shields.io/badge/xAI%20Grok-grok--2--latest-000000?style=for-the-badge&logo=x&logoColor=white)]()
-[![Track](https://img.shields.io/badge/Razorpay%20AI%20Buildathon-2026-blue?style=for-the-badge)]()
+[![Node.js](https://img.shields.io/badge/Node.js-v20%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-v18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-v6%2B-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![xAI Grok](https://img.shields.io/badge/xAI%20Grok-grok--2--latest-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.ai/)
+[![Track](https://img.shields.io/badge/Razorpay%20AI%20Buildathon-2026-blue?style=for-the-badge)](https://razorpay.com/)
 
 ---
 
 ## 📑 Table of Contents
 1. [Executive Summary](#executive-summary)
-2. [The Core Problem](#1-the-core-problem)
-3. [The Solution & Paradigm](#2-the-solution--paradigm)
-4. [Why RecoverOS Outperforms Legacy Systems](#3-why-recoveros-outperforms-legacy-systems)
-5. [End-to-End System Architecture](#4-end-to-end-system-architecture)
-6. [Core Algorithms & Intelligence Engine](#5-core-algorithms--intelligence-engine)
+2. [1. The Problem](#1-the-problem)
+3. [2. The Solution & Paradigm](#2-the-solution--paradigm)
+4. [3. Why RecoverOS Outperforms Legacy Systems](#3-why-recoveros-outperforms-legacy-systems)
+5. [4. End-to-End System Architecture](#4-end-to-end-system-architecture)
+6. [5. Core Algorithms & Intelligence Engine](#5-core-algorithms--intelligence-engine)
    - [A. Recovery Opportunity Scoring (ROS 0–100)](#a-recovery-opportunity-scoring-ros-0100)
-   - [B. AI Diagnosis Layer (xAI Grok-2 & Fallback)](#b-ai-diagnosis-layer-xai-grok-2--fallback)
+   - [B. AI Diagnosis Layer (xAI Grok-2 & Deterministic Fallback)](#b-ai-diagnosis-layer-xai-grok-2--deterministic-fallback)
    - [C. 7-Step Deterministic Policy & Guardrail Engine](#c-7-step-deterministic-policy--guardrail-engine)
    - [D. Execution Safety & Composite Idempotency](#d-execution-safety--composite-idempotency)
-7. [Enterprise Features Showcase](#6-enterprise-features-showcase)
-   - [A. Multi-Currency Global Conversion Engine](#a-multi-currency-global-conversion-engine)
+7. [6. Enterprise Features Showcase](#6-enterprise-features-showcase)
+   - [A. Multi-Currency Display & Conversion](#a-multi-currency-display--conversion)
    - [B. Tamper-Evident SHA-256 Hash-Chained Audit Ledger](#b-tamper-evident-sha-256-hash-chained-audit-ledger)
    - [C. Human-in-the-Loop Governance Matrix](#c-human-in-the-loop-governance-matrix)
-   - [D. Responsive & Adaptive Console UI](#d-responsive--adaptive-console-ui)
-8. [Visual Showcase & UI Gallery](#7-visual-showcase--ui-gallery)
-9. [Mathematical Attribution & Demo Economics](#8-mathematical-attribution--demo-economics)
-10. [Technology Stack](#9-technology-stack)
-11. [Project Directory Structure](#10-project-directory-structure)
-12. [Local Setup & Reproduction Guide](#11-local-setup--reproduction-guide)
-13. [Environment Configuration](#12-environment-configuration)
-14. [REST API Reference](#13-rest-api-reference)
-15. [Security, Governance & Compliance](#15-security-governance--compliance)
-16. [Automated Verification & Test Matrix](#16-automated-verification--test-matrix)
-17. [Future Roadmap](#17-future-roadmap)
+8. [7. Visual Showcase & UI Gallery](#7-visual-showcase--ui-gallery)
+   - [A. Dark Mode Operations Overview](#a-dark-mode-operations-overview)
+   - [B. Enterprise Clean Light Mode](#b-enterprise-clean-light-mode)
+   - [C. Batch In Progress](#c-batch-in-progress)
+   - [D. Batch Completed with Simulation](#d-batch-completed-with-simulation)
+   - [E. Dense Recovery Queue Grid](#e-dense-recovery-queue-grid)
+   - [F. Case Detail Investigation Drawer](#f-case-detail-investigation-drawer)
+   - [G. Global Multi-Currency Conversion Engine](#g-global-multi-currency-conversion-engine)
+   - [H. High-Value Human Authorization Modal](#h-high-value-human-authorization-modal)
+   - [I. Real-Time Agent Activity Stream](#i-real-time-agent-activity-stream)
+   - [J. Cryptographic Tamper-Evident Audit Ledger](#j-cryptographic-tamper-evident-audit-ledger)
+   - [K. Customer Experience & Payment Rails Modals](#k-customer-experience--payment-rails-modals)
+9. [8. Mathematical Attribution & Demo Economics](#8-mathematical-attribution--demo-economics)
+10. [9. Technology Stack](#9-technology-stack)
+11. [10. Project Directory Structure](#10-project-directory-structure)
+12. [11. Local Setup & Reproduction Guide](#11-local-setup--reproduction-guide)
+13. [12. Environment Configuration](#12-environment-configuration)
+14. [13. REST API Reference](#13-rest-api-reference)
+15. [14. Security, Governance & Compliance](#14-security-governance--compliance)
+16. [15. Automated Verification & Test Matrix](#15-automated-verification--test-matrix)
+17. [16. Future Roadmap](#16-future-roadmap)
 
 ---
 
@@ -50,7 +60,7 @@
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           RecoverOS Workflow                                 │
+│                           RecoverOS Workflow                                │
 │                                                                             │
 │  [ Revenue Event ]                                                          │
 │  Failed Payment / Checkout Abandonment / Invoice Overdue                    │
@@ -78,6 +88,7 @@
 │                ▼                                                            │
 │       [ Tamper-Evident Audit Trail ]                                        │
 └─────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -122,7 +133,7 @@ A recovery system therefore needs more than retry logic or a dashboard. It needs
 
 ---
 
-## 3. Why-recoveros-outperforms-legacy-systems
+## 3. Why RecoverOS Outperforms Legacy Systems
 
 | Capability / Feature | Conventional Recovery Approach | RecoverOS Operating System |
 | :--- | :--- | :--- |
@@ -232,6 +243,7 @@ graph TD
     Cases --> Transactions
 
     CoreServices["Recovery Domain Services"] -.-> DB
+```
 
 ---
 
@@ -243,7 +255,7 @@ The **Recovery Opportunity Score (ROS)** is a deterministic mathematical heurist
 
 $$\text{ROS} = \text{round}\Big(0.30 \cdot F_{\text{recoverability}} + 0.25 \cdot C_{\text{reliability}} + 0.15 \cdot A_{\text{fatigue}} + 0.15 \cdot T_{\text{amount}} + 0.15 \cdot R_{\text{recency}}\Big)$$
 
-```
+```text
 ┌────────────────────────┬────────────────────────────────────────────────────────────────────────┐
 │ Factor                 │ Dimension Values & Calibrated Weights                                 │
 ├────────────────────────┼────────────────────────────────────────────────────────────────────────┤
@@ -280,8 +292,8 @@ RecoverOS uses a **Dual-Mode AI Diagnostic Engine** that supports live Grok-base
          [ Live Mode: xAI Grok ]           [ Deterministic Fallback ]
          • Model: grok-2-latest            • No external AI dependency
          • Structured output               • Deterministic results
-         • Zod schema validation            • Reproducible demonstrations
-         • 3,500ms timeout guardrail        • Schema-compatible output
+         • Zod schema validation           • Reproducible demonstrations
+         • 3,500ms timeout guardrail       • Schema-compatible output
          • Automatic fallback on failure
                     │                                 │
                     └────────────────┬────────────────┘
@@ -290,6 +302,8 @@ RecoverOS uses a **Dual-Mode AI Diagnostic Engine** that supports live Grok-base
                                      │
                                      ▼
                          [ Deterministic Policy ]
+```
+
 ---
 
 ### C. 7-Step Deterministic Policy & Guardrail Engine
@@ -336,6 +350,8 @@ sequenceDiagram
         Policy->>Audit: Log APPROVE
         Policy->>Exec: Dispatch Bounded Execution
     end
+```
+
 ---
 
 ### D. Execution Safety & Composite Idempotency
@@ -371,12 +387,13 @@ RecoverOS includes a **multi-currency display and conversion layer** accessible 
 - **Staged Preview & Global Display Update**: Selecting a currency previews the converted values in the Settings modal. Clicking **"Done"** applies the selected currency across supported KPI cards, revenue charts, queue tables, case details, modals, and audit views.
 
 - **Browser Persistence**: The selected currency preference is stored in browser `localStorage` and restored after page reloads.
+
 ---
 
 ### B. Tamper-Evident SHA-256 Hash-Chained Audit Ledger
 Every operational transition and policy evaluation is recorded in the `audit_logs` collection and sealed into an immutable sequential hash chain:
 
-```
+```text
 Entry #1 (Genesis)              Entry #2                        Entry #3
 ┌─────────────────────────┐     ┌─────────────────────────┐     ┌─────────────────────────┐
 │ PreviousHash: 000...000 │ ┌──►│ PreviousHash: a7f8c9... │ ┌──►│ PreviousHash: e3d2b1... │
@@ -400,16 +417,13 @@ Entry #1 (Genesis)              Entry #2                        Entry #3
 
 ---
 
-
 ## 7. Visual Showcase & UI Gallery
-
 
 ### A. Dark Mode Operations Overview
 *Executive KPI suite, Recovery Funnel, Category Loss breakdown, and dynamic revenue metrics in dark charcoal mode.*
 ![Dark Mode Overview](docs/screenshots/01_overview_dark_initial.png)
 
 ---
-
 
 ### B. Enterprise Clean Light Mode
 *High-contrast light mode designed for financial operations teams and daytime workflows.*
@@ -423,9 +437,11 @@ Entry #1 (Genesis)              Entry #2                        Entry #3
 
 ---
 
-### D. Batch Completed with simutlation
+### D. Batch Completed with Simulation
 *Enterprise clean Dark mode with batch completed with simulation.*
 ![Batch Completed](docs/screenshots/04_batch_completed.png)
+
+---
 
 ### E. Dense Recovery Queue Grid
 *Real-time recovery queue with multi-state filters (All, At Risk, Escalated, Recovered, Stopped), ROS score pills, and quick actions.*
@@ -470,7 +486,7 @@ Entry #1 (Genesis)              Entry #2                        Entry #3
 ![Live Status Tracker](docs/screenshots/11_view_status.png)
 ![Alternate Payment Rails](docs/screenshots/11_alternate_payment.png)
 
-
+---
 
 ## 8. Mathematical Attribution & Demo Economics
 
@@ -567,7 +583,6 @@ RecoverOS/
 │
 ├── docs/
 │   ├── screenshots/                      # High-Resolution Verification Screenshots
-├── .env.example                          # Environment Variables Template
 ├── .gitignore                            # Exclusion Rules
 ├── README.md                             # Production Technical Documentation
 ```
@@ -583,7 +598,7 @@ RecoverOS/
 
 ### Step 1: Clone Repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/Rohtash039/RecoverOS-Revenue-Recovery-Operating-System.git
 cd RecoverOS
 ```
 
@@ -594,23 +609,8 @@ npm run install
 ```
 
 ### Step 3: Configure Environment
-Create `server/.env` using `.env.example`:
-```bash
-cp .env.example server/.env
-```
+Create `server/.env` 
 
-Edit `server/.env` if using live xAI Grok:
-```env
-PORT=5000
-NODE_ENV=development
-MONGO_URI=mongodb://127.0.0.1:27017/recoveros
-GROK_API_KEY=your_xai_grok_api_key_here  # Optional: Leave blank to use FallbackEngine
-GROK_MODEL=grok-2-latest
-CLIENT_URL=http://localhost:5173
-AI_TIMEOUT_MS=3500
-AI_MODE=deterministic                   # 'live' or 'deterministic'
-SIMULATION_SEED=RECOVEROS_BUILDATHON_2026
-```
 
 ### Step 4: Run Automated Tests & Verification
 ```bash
@@ -639,14 +639,14 @@ Open your browser at: **`http://localhost:5173`**
 | Variable | Description | Default / Example |
 | :--- | :--- | :--- |
 | `PORT` | Express backend listening port | `5000` |
-| `NODE_ENV` | Application environment | `development` |
+| `NODE_ENV` | Application environment | `production` |
 | `MONGO_URI` | MongoDB database URI | `mongodb://127.0.0.1:27017/recoveros` |
 | `GROK_API_KEY` | xAI Grok API Key (for Live Mode) | `xai-...` (or blank for Fallback) |
 | `GROK_MODEL` | xAI Model Identifier | `grok-2-latest` |
-| `CLIENT_URL` | Allowed CORS origin | `http://localhost:5173` |
+| `CLIENT_URL` | Allowed CORS origin | `https://recoveros-five.vercel.app/` |
 | `AI_TIMEOUT_MS` | Max latency ceiling before invoking fallback | `3500` |
 | `AI_MODE` | AI Mode (`live` or `deterministic`) | `deterministic` |
-| `SIMULATION_SEED` | Global seed string for deterministic simulator | `RECOVEROS_BUILDATHON_2026` |
+| `SIMULATION_SEED` | Global seed string for deterministic simulator | `RAZORPAY_BUILDATHON_2026` |
 | `API_KEY` | Backend API Key (bypassed in dev if blank) | `secret_api_key_xxx` |
 | `VITE_API_BASE_URL` | Frontend API client base URL | `http://localhost:5000/api` |
 | `VITE_API_KEY` | Frontend API Key sent via `x-api-key` | `secret_api_key_xxx` |
@@ -681,7 +681,6 @@ Open your browser at: **`http://localhost:5173`**
 - **`GET /api/audit-logs/activity`**: Chronological operational event feed for the Agent Activity Stream.
 
 ---
-
 
 ## 14. Security, Governance & Compliance
 
@@ -739,3 +738,8 @@ node server/src/scripts/verifyP3Performance.js    # P3-9 & P3-10: Index & Cachin
 
 ---
 
+## 17. Project Links
+
+- **Source Code**: [GitHub Repository](https://github.com/Rohtash039/RecoverOS-Revenue-Recovery-Operating-System)
+- **Frontend**: [Live Demo](https://recoveros-five.vercel.app/)
+- **Backend API**: [Render API](https://recoveros-robu.onrender.com/api/health)
