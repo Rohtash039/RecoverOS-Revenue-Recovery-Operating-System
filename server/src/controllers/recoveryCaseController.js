@@ -136,7 +136,7 @@ export async function getWhyNotRetryExplanation(req, res, next) {
 export async function postCaseAction(req, res, next) {
   try {
     const { id } = req.params;
-    const { action } = req.body;
+    const { action, operatorId } = req.body;
 
     const recoveryCase = await RecoveryCase.findOne({
       $or: [{ recoveryCaseId: id }, { transactionId: id }]
@@ -150,7 +150,7 @@ export async function postCaseAction(req, res, next) {
     }
 
     const transaction = await Transaction.findOne({ transactionId: recoveryCase.transactionId });
-    const updatedCase = await handleHumanAction(recoveryCase, transaction, action);
+    const updatedCase = await handleHumanAction(recoveryCase, transaction, action, operatorId);
 
     res.json({
       success: true,

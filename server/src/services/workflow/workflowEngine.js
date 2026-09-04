@@ -242,7 +242,7 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
 /**
  * Handles explicit Human Actions on ESCALATED cases
  */
-export async function handleHumanAction(recoveryCase, transaction, actionType) {
+export async function handleHumanAction(recoveryCase, transaction, actionType, operatorId = 'ops_lead_default') {
   const caseId = recoveryCase.recoveryCaseId;
   const txnId = transaction?.transactionId || recoveryCase.transactionId;
 
@@ -259,7 +259,7 @@ export async function handleHumanAction(recoveryCase, transaction, actionType) {
   if (actionType === 'REJECT_ESCALATION' || actionType === 'FORCE_STOP') {
     validateStateTransition(recoveryCase.state, CASE_STATES.STOPPED, AUDIT_ACTORS.HUMAN);
     recoveryCase.state = CASE_STATES.STOPPED;
-    recoveryCase.terminalReason = 'Escalation rejected / stopped by human operator.';
+    recoveryCase.terminalReason = `Escalation rejected / stopped by human operator (${operatorId}).`;
 
     await recordAuditLog({
       recoveryCaseId: caseId,
@@ -269,7 +269,8 @@ export async function handleHumanAction(recoveryCase, transaction, actionType) {
       actionTaken: RECOVERY_ACTIONS.STOP_RECOVERY,
       reason: recoveryCase.terminalReason,
       stateBefore: CASE_STATES.ESCALATED,
-      stateAfter: CASE_STATES.STOPPED
+      stateAfter: CASE_STATES.STOPPED,
+      payload: { operatorId }
     });
 
     recoveryCase.updatedAt = new Date();
@@ -284,16 +285,17 @@ export async function handleHumanAction(recoveryCase, transaction, actionType) {
     const actionToExecute = recoveryCase.pendingHumanAction || RECOVERY_ACTIONS.RETRY_PAYMENT;
     const attemptNumber = (recoveryCase.retryCount || 0) + 1;
 
-    // 1. Log Human Approval Granted (Actor: HUMAN)
+    // 1. Log Human Approval Granted (Actor: HUMAN) with operatorId attribution
     await recordAuditLog({
       recoveryCaseId: caseId,
       transactionId: txnId,
       actor: AUDIT_ACTORS.HUMAN,
       event: 'HUMAN_APPROVAL_GRANTED',
       actionTaken: actionToExecute,
-      reason: `Human operator authorized action '${actionToExecute}' on high-value/escalated case.`,
+      reason: `Human operator '${operatorId}' authorized action '${actionToExecute}' on high-value/escalated case.`,
       stateBefore: CASE_STATES.ESCALATED,
-      stateAfter: CASE_STATES.EXECUTING
+      stateAfter: CASE_STATES.EXECUTING,
+      payload: { operatorId, pendingHumanAction: actionToExecute }
     });
 
     // 2. Transition to OBSERVING and log ACTION_EXECUTED (Actor: SYSTEM) BEFORE simulator execution

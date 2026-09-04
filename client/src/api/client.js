@@ -5,6 +5,12 @@ const api = axios.create({
   timeout: 10000
 });
 
+// Attach API key header if set in environment (no hardcoded fallback)
+const configuredApiKey = import.meta.env.VITE_API_KEY;
+if (configuredApiKey) {
+  api.defaults.headers.common['x-api-key'] = configuredApiKey;
+}
+
 export const RecoverOSAPI = {
   getDashboardSummary: async () => {
     const res = await api.get('/dashboard/summary');
@@ -26,8 +32,8 @@ export const RecoverOSAPI = {
     return res.data.data;
   },
 
-  postCaseAction: async (id, action) => {
-    const res = await api.post(`/recovery-cases/${id}/action`, { action });
+  postCaseAction: async (id, action, operatorId = 'ops_lead_rohtash') => {
+    const res = await api.post(`/recovery-cases/${id}/action`, { action, operatorId });
     return res.data.data;
   },
 

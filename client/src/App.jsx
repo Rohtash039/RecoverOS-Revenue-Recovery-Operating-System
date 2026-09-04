@@ -140,10 +140,10 @@ export default function App() {
   };
 
   // Handler: Human Action (Approve / Reject Escalation)
-  const handleHumanActionExecute = async (caseId, actionType) => {
+  const handleHumanActionExecute = async (caseId, actionType, operatorId = 'ops_lead_rohtash') => {
     try {
       setIsProcessingAction(true);
-      await RecoverOSAPI.postCaseAction(caseId, actionType);
+      await RecoverOSAPI.postCaseAction(caseId, actionType, operatorId);
       setApprovalTargetCase(null);
       if (selectedCaseDetail?.case?.recoveryCaseId === caseId) {
         const updated = await RecoverOSAPI.getRecoveryCaseById(caseId);

@@ -9,5 +9,6 @@ export const ENV = {
   CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:5173',
   AI_TIMEOUT_MS: parseInt(process.env.AI_TIMEOUT_MS || '3500', 10),
   AI_MODE: process.env.AI_MODE || 'deterministic', // 'live' | 'deterministic'
-  SIMULATION_SEED: process.env.SIMULATION_SEED || 'RECOVEROS_BUILDATHON_2026'
+  SIMULATION_SEED: process.env.SIMULATION_SEED || 'RECOVEROS_BUILDATHON_2026',
+  API_KEY: process.env.API_KEY || ''
 };
