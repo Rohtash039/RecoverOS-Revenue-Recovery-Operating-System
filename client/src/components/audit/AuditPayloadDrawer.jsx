@@ -1,8 +1,7 @@
-import React from 'react';
 import { Modal } from '../common/Modal';
 import { ActorBadge } from '../common/Badge';
 import { formatDate, formatINR } from '../../utils/formatters';
-import { FileText, Database } from 'lucide-react';
+import {  Database } from 'lucide-react';
 
 export function AuditPayloadDrawer({ isOpen, onClose, auditEvent }) {
   if (!isOpen || !auditEvent) return null;
@@ -37,15 +36,16 @@ export function AuditPayloadDrawer({ isOpen, onClose, auditEvent }) {
             <span className="text-neutral-500 dark:text-neutral-400">Transaction ID:</span>
             <span className="text-neutral-800 dark:text-neutral-200">{auditEvent.transactionId}</span>
           </div>
-          {auditEvent.financialImpact > 0 && (
-            <div className="flex justify-between">
-              <span className="text-neutral-500 dark:text-neutral-400">Financial Impact:</span>
-              <span className="text-emerald-700 dark:text-emerald-400 font-bold">{formatINR(auditEvent.financialImpact)}</span>
-            </div>
-          )}
+          <div className="flex justify-between">
+            <span className="text-neutral-500 dark:text-neutral-400">Financial Impact:</span>
+            <span className={auditEvent.financialImpact > 0 ? "text-emerald-700 dark:text-emerald-400 font-bold" : "text-neutral-700 dark:text-neutral-300 font-mono font-medium"}>
+              {auditEvent.financialImpact > 0
+                ? `+ ${formatINR(auditEvent.financialImpact)}`
+                : formatINR(auditEvent.payload?.initialRevenueAtRisk || auditEvent.payload?.amount || auditEvent.payload?.recoveredAmount || auditEvent.financialImpact || 0)}
+            </span>
+          </div>
         </div>
 
-        {/* Raw Payload JSON */}
         <div>
           <div className="text-neutral-500 dark:text-neutral-400 text-[10px] mb-1 font-semibold uppercase tracking-wider">
             Raw Event Payload
@@ -58,3 +58,4 @@ export function AuditPayloadDrawer({ isOpen, onClose, auditEvent }) {
     </Modal>
   );
 }
+

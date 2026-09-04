@@ -1,6 +1,5 @@
-import React from 'react';
 import { Modal } from '../common/Modal';
-import { ShieldX, AlertOctagon, CheckCircle2, XCircle } from 'lucide-react';
+import { ShieldX, XCircle } from 'lucide-react';
 import { ScorePill } from '../common/ScorePill';
 
 export function WhyNotRetryModal({ isOpen, onClose, explanation, targetCase }) {
@@ -19,7 +18,7 @@ export function WhyNotRetryModal({ isOpen, onClose, explanation, targetCase }) {
       maxWidth="max-w-lg"
     >
       <div className="space-y-3.5 text-xs">
-        {/* Case Info Header */}
+
         <div className="p-3 rounded-md bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 flex justify-between items-center">
           <div>
             <div className="font-mono font-semibold text-neutral-900 dark:text-neutral-100 text-sm">{targetCase?.transactionId}</div>
@@ -31,15 +30,14 @@ export function WhyNotRetryModal({ isOpen, onClose, explanation, targetCase }) {
           </div>
         </div>
 
-        {/* Structured Policy Decision Reasons */}
         <div className="space-y-1.5">
           <div className="text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">
             Evaluated Policy Guardrails:
           </div>
           <div className="space-y-1.5">
             {explanation.reasons.map((reason, idx) => (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className="p-2.5 rounded-md bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 flex items-start gap-2 text-neutral-800 dark:text-neutral-200"
               >
                 <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
@@ -49,7 +47,6 @@ export function WhyNotRetryModal({ isOpen, onClose, explanation, targetCase }) {
           </div>
         </div>
 
-        {/* Policy Limits Status */}
         <div className="p-3 rounded-md bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 space-y-1 text-[11px]">
           <div className="flex justify-between text-neutral-500 dark:text-neutral-400">
             <span>Attempts Executed:</span>
@@ -64,3 +61,4 @@ export function WhyNotRetryModal({ isOpen, onClose, explanation, targetCase }) {
     </Modal>
   );
 }
+

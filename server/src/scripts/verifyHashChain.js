@@ -14,18 +14,16 @@ async function runHashChainVerification() {
 
   function assert(condition, message) {
     if (condition) {
-      console.log(`✅ PASS: ${message}`);
+      console.log(`PASS: ${message}`);
       passed++;
     } else {
-      console.error(`❌ FAIL: ${message}`);
+      console.error(`FAIL: ${message}`);
       failed++;
     }
   }
 
   try {
-    // -------------------------------------------------------------
-    // Test 1: Seed audit trail verification
-    // -------------------------------------------------------------
+
     await generateSeedDataset();
     const initialVerification = await verifyAuditChainIntegrity();
 
@@ -34,9 +32,6 @@ async function runHashChainVerification() {
       `Fresh seed audit chain is 100% cryptographically valid (${initialVerification.verifiedCount}/${initialVerification.totalEntries} entries verified)`
     );
 
-    // -------------------------------------------------------------
-    // Test 2: Full batch execution audit trail verification
-    // -------------------------------------------------------------
     console.log('\n[Step] Executing simulation batch to generate dense multi-actor audit events...');
     const batch = await startBatchRun('FAST');
     while (true) {
@@ -51,14 +46,10 @@ async function runHashChainVerification() {
       `Post-batch audit chain is unbroken across ${postBatchVerification.totalEntries} multi-actor events (Latest Hash: ${postBatchVerification.latestHash.substring(0, 16)}...)`
     );
 
-    // -------------------------------------------------------------
-    // Test 3: Tamper Detection (Direct MongoDB mutation)
-    // -------------------------------------------------------------
     console.log('\n[Step] Simulating malicious audit record tampering in MongoDB...');
     const targetAudit = await AuditLog.findOne({ event: 'REVENUE_RECOVERED' });
     const originalImpact = targetAudit.financialImpact;
 
-    // Maliciously tamper with financialImpact
     targetAudit.financialImpact = 9999999;
     await targetAudit.save();
 
@@ -69,9 +60,6 @@ async function runHashChainVerification() {
       `Cryptographic tamper detection verified: Chain flagged as INVALID at compromised auditId '${tamperedVerification.brokenAtAuditId}'`
     );
 
-    // -------------------------------------------------------------
-    // Test 4: Restoration & Verification Recovery
-    // -------------------------------------------------------------
     console.log('\n[Step] Restoring original audit record value...');
     targetAudit.financialImpact = originalImpact;
     await targetAudit.save();
@@ -89,3 +77,4 @@ async function runHashChainVerification() {
 }
 
 runHashChainVerification();
+

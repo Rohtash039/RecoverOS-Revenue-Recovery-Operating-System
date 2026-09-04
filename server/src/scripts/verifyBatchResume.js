@@ -14,18 +14,16 @@ async function runBatchResumeVerification() {
 
   function assert(condition, message) {
     if (condition) {
-      console.log(`✅ PASS: ${message}`);
+      console.log(`PASS: ${message}`);
       passed++;
     } else {
-      console.error(`❌ FAIL: ${message}`);
+      console.error(`FAIL: ${message}`);
       failed++;
     }
   }
 
   try {
-    // -------------------------------------------------------------
-    // Step 1: Run uninterrupted golden baseline batch
-    // -------------------------------------------------------------
+
     console.log('[Step 1] Running uninterrupted golden baseline batch...');
     await generateSeedDataset();
     const goldenBatch = await startBatchRun('FAST');
@@ -39,16 +37,11 @@ async function runBatchResumeVerification() {
     const baseline = await getBatchStatus(goldenBatch.batchId);
     console.log(`Baseline Result: Recovered ${baseline.recoveredCases} cases, ₹${baseline.recoveredAmount.toLocaleString('en-IN')}`);
 
-    // -------------------------------------------------------------
-    // Step 2: Reset DB and start interrupted batch run
-    // -------------------------------------------------------------
     console.log('\n[Step 2] Initializing fresh batch and simulating mid-run process interruption...');
     await generateSeedDataset();
 
-    // Start animated batch (slower processing)
     const interruptedBatch = await startBatchRun('ANIMATED');
 
-    // Wait until ~25-35 cases have been processed
     for (let i = 0; i < 40; i++) {
       await new Promise(r => setTimeout(r, 100));
       const status = await getBatchStatus(interruptedBatch.batchId);
@@ -57,7 +50,6 @@ async function runBatchResumeVerification() {
       }
     }
 
-    // Force abort in-flight background process (simulates immediate process termination)
     abortActiveBatch();
     await new Promise(r => setTimeout(r, 150));
 
@@ -69,13 +61,9 @@ async function runBatchResumeVerification() {
       `Checkpoint persisted in DB: lastProcessedCaseId='${midRunStatus.lastProcessedCaseId}', processed=${midRunStatus.processedCases}`
     );
 
-    // -------------------------------------------------------------
-    // Step 3: Trigger batch resumption from saved checkpoint
-    // -------------------------------------------------------------
     console.log('\n[Step 3] Resuming batch execution from checkpoint...');
     await resumeBatchRun(interruptedBatch.batchId, 'FAST');
 
-    // Wait for resumed batch completion
     while (true) {
       await new Promise(r => setTimeout(r, 100));
       const status = await getBatchStatus(interruptedBatch.batchId);
@@ -84,9 +72,6 @@ async function runBatchResumeVerification() {
 
     const finalResumedBatch = await getBatchStatus(interruptedBatch.batchId);
 
-    // -------------------------------------------------------------
-    // Step 4: Verify 100% financial and state equality with baseline
-    // -------------------------------------------------------------
     assert(finalResumedBatch.status === 'COMPLETED', 'Resumed batch successfully transitioned to COMPLETED');
     assert(finalResumedBatch.processedCases === 100, 'Resumed batch processed all 100 cases without skipping');
     assert(
@@ -106,9 +91,6 @@ async function runBatchResumeVerification() {
       `State Determinism Invariant: Resumed stopped cases (${finalResumedBatch.stoppedCases}) matches baseline (${baseline.stoppedCases})`
     );
 
-    // -------------------------------------------------------------
-    // Step 5: Verify Audit Log has BATCH_RESUME_STARTED entry
-    // -------------------------------------------------------------
     const resumeAudit = await AuditLog.findOne({
       event: 'BATCH_RESUME_STARTED',
       'payload.batchId': interruptedBatch.batchId
@@ -122,3 +104,4 @@ async function runBatchResumeVerification() {
 }
 
 runBatchResumeVerification();
+

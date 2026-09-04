@@ -10,19 +10,12 @@ import { calculateROS } from '../services/scoring/opportunityScorer.js';
 import { CASE_STATES, AUDIT_ACTORS, RECOVERY_ACTIONS } from '../config/constants.js';
 
 async function runVerification() {
-  console.log('====================================================================');
-  console.log('   RECOVEROS — FINAL WORKFLOW & FRAUD SEMANTICS VERIFICATION       ');
-  console.log('====================================================================\n');
-
+  
   await connectDB();
 
-  // Reset to clean seed state
   console.log('>>> [RESETTING TO CLEAN SEED BASELINE]');
   await generateSeedDataset();
 
-  // -------------------------------------------------------------------------
-  // TEST A: NORMAL RECOVERY
-  // -------------------------------------------------------------------------
   console.log('>>> [TEST A: NORMAL RECOVERY]');
   const caseA = await RecoveryCase.findOne({ normalizedFailureCategory: 'TEMPORARY_PAYMENT_FAILURE', initialRevenueAtRisk: { $lt: 50000 } });
   const custA = await Customer.findOne({ customerId: caseA.customerId });
@@ -38,11 +31,8 @@ async function runVerification() {
   console.log(`- Audit Events: ${logsA.map(l => l.event).join(' -> ')}`);
 
   const testAPass = updatedA.state === CASE_STATES.RECOVERED && logsA.some(l => l.event === 'ACTION_EXECUTED');
-  console.log(`Test A Result: ${testAPass ? '✅ PASS' : '❌ FAIL'}\n`);
+  console.log(`Test A Result: ${testAPass ? ' PASS' : ' FAIL'}\n`);
 
-  // -------------------------------------------------------------------------
-  // TEST B: FRAUD SUSPECTED (TXN-8093 / RC-1093)
-  // -------------------------------------------------------------------------
   console.log('>>> [TEST B: FRAUD SUSPECTED (TXN-8093 / RC-1093)]');
   const caseB = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1093' });
   const custB = await Customer.findOne({ customerId: caseB.customerId });
@@ -72,11 +62,8 @@ async function runVerification() {
     updatedB.policyEvaluation?.decision === 'REJECT' &&
     updatedB.policyEvaluation?.finalAction === RECOVERY_ACTIONS.STOP_RECOVERY
   );
-  console.log(`Test B Result: ${testBPass ? '✅ PASS' : '❌ FAIL'}\n`);
+  console.log(`Test B Result: ${testBPass ? 'PASS' : 'FAIL'}\n`);
 
-  // -------------------------------------------------------------------------
-  // TEST C: CARD STOLEN (TXN-8097 / RC-1097)
-  // -------------------------------------------------------------------------
   console.log('>>> [TEST C: CARD STOLEN (TXN-8097 / RC-1097)]');
   const caseC = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1097' });
   const custC = await Customer.findOne({ customerId: caseC.customerId });
@@ -91,11 +78,8 @@ async function runVerification() {
   console.log(`- Policy Decision: ${updatedC.policyEvaluation?.decision}, Action: ${updatedC.policyEvaluation?.finalAction}`);
 
   const testCPass = caseC.recoveryScore === 0 && updatedC.state === CASE_STATES.STOPPED && updatedC.recoveredAmount === 0;
-  console.log(`Test C Result: ${testCPass ? '✅ PASS' : '❌ FAIL'}\n`);
+  console.log(`Test C Result: ${testCPass ? 'PASS' : 'FAIL'}\n`);
 
-  // -------------------------------------------------------------------------
-  // TEST D: ACCOUNT CLOSED (TXN-8099 / RC-1099)
-  // -------------------------------------------------------------------------
   console.log('>>> [TEST D: ACCOUNT CLOSED (TXN-8099 / RC-1099)]');
   const caseD = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1099' });
   const custD = await Customer.findOne({ customerId: caseD.customerId });
@@ -110,11 +94,8 @@ async function runVerification() {
   console.log(`- Policy Decision: ${updatedD.policyEvaluation?.decision}, Action: ${updatedD.policyEvaluation?.finalAction}`);
 
   const testDPass = caseD.recoveryScore === 0 && updatedD.state === CASE_STATES.STOPPED && updatedD.recoveredAmount === 0;
-  console.log(`Test D Result: ${testDPass ? '✅ PASS' : '❌ FAIL'}\n`);
+  console.log(`Test D Result: ${testDPass ? 'PASS' : 'FAIL'}\n`);
 
-  // -------------------------------------------------------------------------
-  // TEST E: HIGH VALUE HUMAN APPROVAL (TXN-8003 / RC-1003)
-  // -------------------------------------------------------------------------
   console.log('>>> [TEST E: HIGH VALUE HUMAN APPROVAL (TXN-8003 / RC-1003)]');
   const caseE = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1003' });
   const custE = await Customer.findOne({ customerId: caseE.customerId });
@@ -123,14 +104,12 @@ async function runVerification() {
   console.log(`- Amount: ₹${caseE.initialRevenueAtRisk.toLocaleString('en-IN')}`);
   console.log(`- ROS Score: ${caseE.recoveryScore}/100`);
 
-  // Automated phase -> must land in ESCALATED
   await processCaseWorkflow(caseE, custE, txnE);
   const escalatedE = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1003' });
   const stateBeforeHuman = escalatedE.state;
   console.log(`- State after automated phase: ${stateBeforeHuman} (Expected: 'ESCALATED')`);
   console.log(`- Pending Action: ${escalatedE.pendingHumanAction}`);
 
-  // Human operator phase -> approve
   const approvedE = await handleHumanAction(escalatedE, txnE, 'APPROVE_ESCALATION');
   const logsE = await AuditLog.find({ recoveryCaseId: 'RC-1003' }).sort({ timestamp: 1 });
 
@@ -152,13 +131,10 @@ async function runVerification() {
     hasActionExecuted &&
     hasRevenueRecovered
   );
-  console.log(`Test E Result: ${testEPass ? '✅ PASS' : '❌ FAIL'}\n`);
+  console.log(`Test E Result: ${testEPass ? ' PASS' : 'FAIL'}\n`);
 
-  // -------------------------------------------------------------------------
-  // TEST F: HUMAN REJECTION
-  // -------------------------------------------------------------------------
   console.log('>>> [TEST F: HUMAN REJECTION]');
-  const caseF = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1017' }); // Another high value case
+  const caseF = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1017' });
   const custF = await Customer.findOne({ customerId: caseF.customerId });
   const txnF = await Transaction.findOne({ transactionId: caseF.transactionId });
 
@@ -174,17 +150,13 @@ async function runVerification() {
   const hasHumanRejected = logsF.some(l => l.event === 'HUMAN_APPROVAL_REJECTED' && l.actor === AUDIT_ACTORS.HUMAN);
 
   const testFPass = rejectedF.state === CASE_STATES.STOPPED && rejectedF.recoveredAmount === 0 && hasHumanRejected;
-  console.log(`Test F Result: ${testFPass ? '✅ PASS' : '❌ FAIL'}\n`);
+  console.log(`Test F Result: ${testFPass ? 'PASS' : 'FAIL'}\n`);
 
-  // -------------------------------------------------------------------------
-  // TEST G: DUPLICATE APPROVAL (IDEMPOTENCY)
-  // -------------------------------------------------------------------------
   console.log('>>> [TEST G: DUPLICATE HUMAN APPROVAL]');
-  const caseG = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1003' }); // Already approved in Test E
+  const caseG = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1003' });
   const actionsBefore = await RecoveryAction.find({ recoveryCaseId: 'RC-1003' });
   const amountBefore = caseG.recoveredAmount;
 
-  // Attempt duplicate approval call
   const duplicateResult = await handleHumanAction(caseG, txnE, 'APPROVE_ESCALATION');
   const actionsAfter = await RecoveryAction.find({ recoveryCaseId: 'RC-1003' });
 
@@ -197,15 +169,12 @@ async function runVerification() {
     duplicateResult.recoveredAmount === amountBefore &&
     duplicateResult.state === CASE_STATES.RECOVERED
   );
-  console.log(`Test G Result: ${testGPass ? '✅ PASS' : '❌ FAIL'}\n`);
+  console.log(`Test G Result: ${testGPass ? 'PASS' : 'FAIL'}\n`);
 
-  // Restore clean state
   await generateSeedDataset();
   await disconnectDB();
 
-  console.log('====================================================================');
-  console.log('     ALL 7 WORKFLOW & FRAUD VERIFICATION TESTS COMPLETE             ');
-  console.log('====================================================================\n');
 }
 
 runVerification();
+

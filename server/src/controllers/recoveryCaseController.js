@@ -38,7 +38,6 @@ export async function getRecoveryCases(req, res, next) {
       .skip(skip)
       .limit(Number(limit));
 
-    // Populate customer and transaction basic data
     const custIds = cases.map(c => c.customerId);
     const txnIds = cases.map(c => c.transactionId);
     const customers = await Customer.find({ customerId: { $in: custIds } });
@@ -188,3 +187,4 @@ export async function analyzeCase(req, res, next) {
     next(error);
   }
 }
+

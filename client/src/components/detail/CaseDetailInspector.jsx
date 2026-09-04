@@ -1,27 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Drawer } from '../common/Drawer';
-import { StateBadge, DecisionBadge, ActorBadge } from '../common/Badge';
+import { StateBadge, DecisionBadge, ActorBadge, InvoiceBadge } from '../common/Badge';
 import { ScorePill } from '../common/ScorePill';
 import { ScoreFactorBreakdown } from './ScoreFactorBreakdown';
 import { CustomerActionModal } from './CustomerActionModal';
 import { formatINR, formatDate } from '../../utils/formatters';
 import { ACTION_LABELS } from '../../utils/constants';
-import { 
-  ShieldCheck, MessageSquare, Play, AlertTriangle, ExternalLink 
+import {
+  ShieldCheck, MessageSquare, Play, AlertTriangle, ExternalLink
 } from 'lucide-react';
 
-export function CaseDetailInspector({ 
-  isOpen, 
-  onClose, 
-  caseData, 
-  onAnalyzeCase, 
+export function CaseDetailInspector({
+  isOpen,
+  onClose,
+  caseData,
+  onAnalyzeCase,
   onOpenApproval,
-  isProcessingAction 
+  isProcessingAction
 }) {
   const [activeTab, setActiveTab] = useState('DIAGNOSIS');
   const [customerActionModal, setCustomerActionModal] = useState(null);
 
-  // ALWAYS default to 'DIAGNOSIS' (Recovery Recommendation) when opened
   useEffect(() => {
     if (isOpen) {
       setActiveTab('DIAGNOSIS');
@@ -33,6 +32,7 @@ export function CaseDetailInspector({
   const { case: rc, customer, transaction, actions = [], auditLogs = [] } = caseData;
   const isEscalated = rc.state === 'ESCALATED';
   const isAtRisk = rc.state === 'AT_RISK';
+  const isInvoice = transaction?.eventType === 'INVOICE_OVERDUE' || Boolean(transaction?.metadata?.invoiceNumber);
 
   return (
     <>
@@ -40,15 +40,21 @@ export function CaseDetailInspector({
         isOpen={isOpen}
         onClose={onClose}
         title={
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <span className="font-mono text-neutral-900 dark:text-neutral-100 font-semibold">{rc.transactionId}</span>
+            {isInvoice && (
+              <InvoiceBadge
+                invoiceNumber={transaction?.metadata?.invoiceNumber}
+                daysOverdue={transaction?.metadata?.daysOverdue}
+              />
+            )}
             <StateBadge state={rc.state} />
           </div>
         }
         width="max-w-2xl"
       >
         <div className="space-y-4">
-          {/* Top Summary Ribbon */}
+
           <div className="p-3.5 rounded-lg bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 grid grid-cols-2 sm:grid-cols-4 gap-3 items-center">
             <div>
               <div className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase font-mono">Revenue at Risk</div>
@@ -66,8 +72,8 @@ export function CaseDetailInspector({
 
             <div>
               <div className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase font-mono">Failure Code</div>
-              <div className="text-xs font-mono font-medium text-neutral-800 dark:text-neutral-200">{transaction?.failureCode}</div>
-              <div className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">{transaction?.failureReason}</div>
+              <div className="text-xs font-mono font-medium text-neutral-800 dark:text-neutral-200">{isInvoice ? 'INVOICE_OVERDUE' : transaction?.failureCode}</div>
+              <div className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">{isInvoice ? `${transaction?.metadata?.daysOverdue || 30}d overdue` : transaction?.failureReason}</div>
             </div>
 
             <div className="text-right sm:text-center">
@@ -76,7 +82,22 @@ export function CaseDetailInspector({
             </div>
           </div>
 
-          {/* Action Button Ribbon if Actionable */}
+          {isInvoice && (
+            <div className="p-3 rounded-lg bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-indigo-900 dark:text-indigo-200">Commercial Invoice:</span>
+                <span className="font-mono text-indigo-800 dark:text-indigo-300 font-medium">{transaction?.metadata?.invoiceNumber || 'INV-2026-XXXX'}</span>
+                <span className="text-neutral-400 dark:text-neutral-600">•</span>
+                <span className="text-neutral-600 dark:text-neutral-400">Due: <strong className="text-neutral-800 dark:text-neutral-200">{transaction?.metadata?.dueDate ? new Date(transaction.metadata.dueDate).toLocaleDateString() : 'N/A'}</strong></span>
+                <span className="text-neutral-400 dark:text-neutral-600">•</span>
+                <span className="text-amber-700 dark:text-amber-400 font-medium">{transaction?.metadata?.daysOverdue || 30} Days Overdue</span>
+              </div>
+              <div className="text-[11px] font-mono px-2 py-0.5 rounded bg-indigo-100/80 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 border border-indigo-200 dark:border-indigo-700/50">
+                Extended 90-Day SLA Window
+              </div>
+            </div>
+          )}
+
           {isEscalated && (
             <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300">
@@ -108,7 +129,6 @@ export function CaseDetailInspector({
             </div>
           )}
 
-          {/* Navigation Tabs */}
           <div className="flex border-b border-neutral-200 dark:border-neutral-800 text-xs font-medium space-x-5">
             {[
               { id: 'DIAGNOSIS', label: 'Recovery Recommendation' },
@@ -130,7 +150,6 @@ export function CaseDetailInspector({
             ))}
           </div>
 
-          {/* Tab 1: Recovery Recommendation */}
           {activeTab === 'DIAGNOSIS' && (
             <div className="space-y-3.5 text-xs">
               <div className="p-3.5 rounded-lg bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 space-y-2.5">
@@ -165,7 +184,6 @@ export function CaseDetailInspector({
                 </div>
               </div>
 
-              {/* Dunning Message Preview */}
               {(() => {
                 const msg = (() => {
                   if (rc.state === 'ESCALATED') {
@@ -223,12 +241,10 @@ export function CaseDetailInspector({
             </div>
           )}
 
-          {/* Tab 2: Scoring */}
           {activeTab === 'SCORING' && (
             <ScoreFactorBreakdown factors={rc.scoreFactors} />
           )}
 
-          {/* Tab 3: Policy Guardrails */}
           {activeTab === 'POLICY' && (
             <div className="space-y-3 text-xs">
               <div className="p-3.5 rounded-lg bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 space-y-2.5">
@@ -266,7 +282,6 @@ export function CaseDetailInspector({
             </div>
           )}
 
-          {/* Tab 4: Recovery Journey Timeline */}
           {activeTab === 'TIMELINE' && (
             <div className="space-y-3 text-xs">
               <div className="relative border-l border-neutral-200 dark:border-neutral-800 ml-3 space-y-4">
@@ -294,7 +309,6 @@ export function CaseDetailInspector({
         </div>
       </Drawer>
 
-      {/* Customer Experience Action Modal */}
       <CustomerActionModal
         isOpen={!!customerActionModal}
         onClose={() => setCustomerActionModal(null)}

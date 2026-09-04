@@ -9,16 +9,10 @@ import { processCaseWorkflow, handleHumanAction } from '../services/workflow/wor
 import { CASE_STATES, AUDIT_ACTORS, RECOVERY_ACTIONS } from '../config/constants.js';
 
 async function runFinalQASuite() {
-  console.log('====================================================================');
-  console.log('            RECOVEROS — FINAL QA & CONCURRENCY AUDIT                ');
-  console.log('====================================================================\n');
 
   await connectDB();
   await generateSeedDataset();
 
-  // -------------------------------------------------------------------------
-  // 1. FRAUD VISUAL & RECOVERY VERIFICATION (TXN-8093)
-  // -------------------------------------------------------------------------
   console.log('>>> [1. HARD-PROHIBITED VERIFICATION (TXN-8093 / RC-1093)]');
   const fraudCase = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1093' });
   const fraudCust = await Customer.findOne({ customerId: fraudCase.customerId });
@@ -43,9 +37,6 @@ async function runFinalQASuite() {
   console.log(`  * Recovered Amount: ₹${updatedFraud.recoveredAmount} (Expected: 0)`);
   console.log(`  * Visible Audit Sequence: ${fraudLogs.map(l => l.event).join(' -> ')}`);
 
-  // -------------------------------------------------------------------------
-  // 2. HIGH-VALUE HUMAN APPROVAL VISUAL VERIFICATION (TXN-8003)
-  // -------------------------------------------------------------------------
   console.log('\n>>> [2. HIGH-VALUE HUMAN APPROVAL VERIFICATION (TXN-8003 / RC-1003)]');
   const hvCase = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1003' });
   const hvCust = await Customer.findOne({ customerId: hvCase.customerId });
@@ -69,11 +60,8 @@ async function runFinalQASuite() {
     console.log(`  * [${log.actor}] ${log.event}: ${log.reason || '—'} (Impact: ₹${log.financialImpact})`);
   }
 
-  // -------------------------------------------------------------------------
-  // 3. CONCURRENCY & IDEMPOTENCY CHECK (SIMULTANEOUS APPROVAL RACE)
-  // -------------------------------------------------------------------------
   console.log('\n>>> [3. SIMULTANEOUS CONCURRENT HUMAN APPROVAL RACE]');
-  // Reset clean state for fresh test
+
   await generateSeedDataset();
   const raceCase = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1003' });
   const raceCust = await Customer.findOne({ customerId: raceCase.customerId });
@@ -82,7 +70,6 @@ async function runFinalQASuite() {
   await processCaseWorkflow(raceCase, raceCust, raceTxn);
   const escalatedForRace = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1003' });
 
-  // Fire two simultaneous approvals concurrently
   const [res1, res2] = await Promise.all([
     handleHumanAction(escalatedForRace, raceTxn, 'APPROVE_ESCALATION'),
     handleHumanAction(escalatedForRace, raceTxn, 'APPROVE_ESCALATION')
@@ -101,14 +88,12 @@ async function runFinalQASuite() {
     finalCaseRace.recoveredAmount === 53149 &&
     finalCaseRace.state === CASE_STATES.RECOVERED
   );
-  console.log(`Concurrency Result: ${concurrencyPass ? '✅ PASS' : '❌ FAIL'}\n`);
+  console.log(`Concurrency Result: ${concurrencyPass ? 'PASS' : 'FAIL'}\n`);
 
   await generateSeedDataset();
   await disconnectDB();
 
-  console.log('====================================================================');
-  console.log('            FINAL QA & CONCURRENCY AUDIT COMPLETE                   ');
-  console.log('====================================================================\n');
 }
 
 runFinalQASuite();
+

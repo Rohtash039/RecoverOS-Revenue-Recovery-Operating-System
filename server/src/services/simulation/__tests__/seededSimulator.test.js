@@ -49,7 +49,6 @@ describe('Seeded Deterministic Simulator (simulateExecutionOutcome)', () => {
       ENV.SIMULATION_SEED = 'SEED_BETA_999';
       const outcomeB = simulateExecutionOutcome({ ...sampleCase, recoveryCaseId: 'RC-1045', recoveryScore: 50 }, RECOVERY_ACTIONS.RETRY_PAYMENT, 1);
 
-      // Verify that seed changes affect simulator input hashing
       expect(ENV.SIMULATION_SEED).toBe('SEED_BETA_999');
     } finally {
       ENV.SIMULATION_SEED = originalSeed;
@@ -66,3 +65,4 @@ describe('Seeded Deterministic Simulator (simulateExecutionOutcome)', () => {
     expect(escalateOutcome.recoveredAmount).toBe(0);
   });
 });
+

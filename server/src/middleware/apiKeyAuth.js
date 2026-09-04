@@ -2,15 +2,8 @@ import { ENV } from '../config/env.js';
 import { recordAuditLog } from '../services/audit/auditService.js';
 import { AUDIT_ACTORS } from '../config/constants.js';
 
-/**
- * Authentication middleware for mutating API endpoints.
- * - In production: Requires ENV.API_KEY to be set, otherwise returns 500 SERVER_MISCONFIGURED.
- * - In development: If ENV.API_KEY is not set, bypasses authentication to simplify local testing.
- * - When ENV.API_KEY is set: Strictly validates the 'x-api-key' request header.
- * - Rejection writes an append-only audit log entry (event: AUTH_FAILED).
- */
 export async function apiKeyAuth(req, res, next) {
-  // Production fail-safe: Ensure API_KEY is configured
+
   if (ENV.NODE_ENV === 'production' && !ENV.API_KEY) {
     return res.status(500).json({
       success: false,
@@ -21,7 +14,6 @@ export async function apiKeyAuth(req, res, next) {
     });
   }
 
-  // Development bypass when no API key has been configured
   if (!ENV.API_KEY) {
     return next();
   }
@@ -29,7 +21,7 @@ export async function apiKeyAuth(req, res, next) {
   const providedKey = req.headers['x-api-key'] || req.get('x-api-key');
 
   if (!providedKey || providedKey !== ENV.API_KEY) {
-    // Record append-only audit trail entry for auth failure
+
     await recordAuditLog({
       recoveryCaseId: req.params?.id || 'N/A',
       transactionId: req.params?.id || 'N/A',
@@ -57,3 +49,4 @@ export async function apiKeyAuth(req, res, next) {
 
   next();
 }
+

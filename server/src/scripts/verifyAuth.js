@@ -3,6 +3,7 @@ import { connectDB } from '../config/db.js';
 import { ENV } from '../config/env.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { RecoveryCase } from '../models/RecoveryCase.js';
+import { RecoveryAction } from '../models/RecoveryAction.js';
 import { generateSeedDataset } from '../services/simulation/seedDataGenerator.js';
 import express from 'express';
 import recoveryCaseRoutes from '../routes/recoveryCaseRoutes.js';
@@ -16,7 +17,6 @@ async function runAuthVerification() {
   await connectDB();
   await generateSeedDataset();
 
-  // Create an isolated Express instance for testing various auth scenarios
   const app = express();
   app.use(express.json());
   app.use('/api/dashboard', dashboardRoutes);
@@ -36,25 +36,18 @@ async function runAuthVerification() {
 
   function assert(condition, message) {
     if (condition) {
-      console.log(`✅ PASS: ${message}`);
       passed++;
     } else {
-      console.error(`❌ FAIL: ${message}`);
       failed++;
     }
   }
 
   try {
-    // -------------------------------------------------------------
-    // Test 1: GET routes remain open without API key
-    // -------------------------------------------------------------
+
     const getRes = await fetch(`${baseUrl}/api/recovery-cases`);
     const getData = await getRes.json();
     assert(getRes.status === 200 && getData.success === true, 'GET /api/recovery-cases is accessible without authentication');
 
-    // -------------------------------------------------------------
-    // Test 2: In Dev mode when API_KEY is unset, mutating route bypasses auth
-    // -------------------------------------------------------------
     ENV.API_KEY = '';
     ENV.NODE_ENV = 'development';
     const devBypassRes = await fetch(`${baseUrl}/api/recovery-cases/RC-1001/analyze`, {
@@ -63,9 +56,6 @@ async function runAuthVerification() {
     });
     assert(devBypassRes.status === 200, 'Dev mode with unset API_KEY permits mutating request (dev auto-bypass)');
 
-    // -------------------------------------------------------------
-    // Test 3: When API_KEY is configured, request with no header is rejected with 401
-    // -------------------------------------------------------------
     ENV.API_KEY = 'secret_test_key_998877';
     const noKeyRes = await fetch(`${baseUrl}/api/recovery-cases/RC-1001/analyze`, {
       method: 'POST',
@@ -77,12 +67,9 @@ async function runAuthVerification() {
       'Configured API_KEY rejects missing x-api-key header with 401 UNAUTHORIZED'
     );
 
-    // -------------------------------------------------------------
-    // Test 4: When API_KEY is configured, request with wrong key is rejected with 401
-    // -------------------------------------------------------------
     const wrongKeyRes = await fetch(`${baseUrl}/api/recovery-cases/RC-1001/analyze`, {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'x-api-key': 'invalid_secret_key_wrong'
       }
@@ -93,30 +80,21 @@ async function runAuthVerification() {
       'Configured API_KEY rejects invalid x-api-key header with 401 UNAUTHORIZED'
     );
 
-    // -------------------------------------------------------------
-    // Test 5: Verify AUTH_FAILED event is recorded in append-only audit trail
-    // -------------------------------------------------------------
     const authAuditEntry = await AuditLog.findOne({ event: 'AUTH_FAILED' }).sort({ timestamp: -1 });
     assert(
       authAuditEntry !== null && authAuditEntry.actor === 'SYSTEM',
       'Audit log recorded AUTH_FAILED entry with actor: SYSTEM and client IP/path'
     );
 
-    // -------------------------------------------------------------
-    // Test 6: Request with valid API key succeeds (using fresh AT_RISK case RC-1002)
-    // -------------------------------------------------------------
     const validKeyRes = await fetch(`${baseUrl}/api/recovery-cases/RC-1002/analyze`, {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'x-api-key': 'secret_test_key_998877'
       }
     });
     assert(validKeyRes.status === 200, 'Valid x-api-key successfully executes mutating request');
 
-    // -------------------------------------------------------------
-    // Test 7: Production mode fail-safe when API_KEY is unset
-    // -------------------------------------------------------------
     ENV.API_KEY = '';
     ENV.NODE_ENV = 'production';
     const prodNoKeyRes = await fetch(`${baseUrl}/api/recovery-cases/RC-1004/analyze`, {
@@ -129,13 +107,9 @@ async function runAuthVerification() {
       'Production mode without configured API_KEY returns 500 SERVER_MISCONFIGURED'
     );
 
-    // -------------------------------------------------------------
-    // Test 8: Operator ID Attribution in human action
-    // -------------------------------------------------------------
     ENV.NODE_ENV = 'development';
     ENV.API_KEY = 'secret_test_key_998877';
 
-    // Set case RC-1003 to ESCALATED state
     const targetCase = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1003' });
     targetCase.state = 'ESCALATED';
     targetCase.pendingHumanAction = 'RETRY_PAYMENT';
@@ -143,7 +117,7 @@ async function runAuthVerification() {
 
     const humanActionRes = await fetch(`${baseUrl}/api/recovery-cases/RC-1003/action`, {
       method: 'POST',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'x-api-key': 'secret_test_key_998877'
       },
@@ -167,8 +141,18 @@ async function runAuthVerification() {
       `Audit trail attributed human approval directly to operator '${humanAuditEntry?.payload?.operatorId}'`
     );
 
+    const executedActionRecord = await RecoveryAction.findOne({
+      recoveryCaseId: 'RC-1003',
+      workflowStep: 'HUMAN_APPROVED_ATTEMPT_1'
+    });
+
+    assert(
+      executedActionRecord?.operatorId === 'ops_lead_rohtash',
+      `RecoveryAction model persisted operatorId directly: '${executedActionRecord?.operatorId}'`
+    );
+
   } finally {
-    // Restore environment
+
     ENV.API_KEY = '';
     ENV.NODE_ENV = 'development';
     await generateSeedDataset();
@@ -178,3 +162,4 @@ async function runAuthVerification() {
 }
 
 runAuthVerification();
+

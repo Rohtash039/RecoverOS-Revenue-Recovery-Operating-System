@@ -1,4 +1,3 @@
-import React from 'react';
 
 export function ScoreFactorBreakdown({ factors = {} }) {
   const factorList = [
@@ -27,10 +26,9 @@ export function ScoreFactorBreakdown({ factors = {} }) {
               </span>
               <span className="font-mono font-semibold text-neutral-900 dark:text-neutral-100">{f.score} / 100</span>
             </div>
-            
-            {/* Progress bar */}
+
             <div className="w-full h-1 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
-              <div 
+              <div
                 className={`h-full rounded-full ${f.score >= 75 ? 'bg-emerald-600 dark:bg-emerald-400' : f.score >= 40 ? 'bg-amber-600 dark:bg-amber-400' : 'bg-rose-600 dark:bg-rose-400'}`}
                 style={{ width: `${f.score}%` }}
               />
@@ -42,3 +40,4 @@ export function ScoreFactorBreakdown({ factors = {} }) {
     </div>
   );
 }
+

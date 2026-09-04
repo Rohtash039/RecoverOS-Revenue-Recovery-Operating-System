@@ -1,8 +1,5 @@
 import { HARD_PROHIBITED_CODES, POLICY_CONFIG } from '../../config/constants.js';
 
-/**
- * Generates structured, deterministic explanation for why a case was NOT retried or was stopped.
- */
 export function explainWhyNotRetry(recoveryCase) {
   const failureCode = recoveryCase.failureCode || recoveryCase.transaction?.failureCode;
   const retryCount = recoveryCase.retryCount || 0;
@@ -50,3 +47,4 @@ export function explainWhyNotRetry(recoveryCase) {
     reasons
   };
 }
+

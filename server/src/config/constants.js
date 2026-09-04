@@ -1,7 +1,3 @@
-/**
- * Centralized Configuration Constants for RecoverOS
- * Single source of truth for policy rules, taxonomy, and simulation parameters.
- */
 
 export const SIMULATION_REFERENCE_TIME = new Date('2026-09-04T12:00:00.000Z');
 export const DEFAULT_SIMULATION_SEED = 'RECOVEROS_BUILDATHON_2026';
@@ -10,9 +6,9 @@ export const POLICY_CONFIG = {
   MAX_PAYMENT_RETRIES: 2,
   MAX_CUSTOMER_CONTACTS: 2,
   MAX_RECOVERY_WINDOW_HOURS: 48,
-  HIGH_VALUE_THRESHOLD: 50000, // INR ₹50,000 triggers human escalation
+  HIGH_VALUE_THRESHOLD: 50000,
   MIN_COOLDOWN_MINUTES: 30,
-  CONFIDENCE_THRESHOLD: 0.65 // AI confidence < 0.65 triggers human review
+  CONFIDENCE_THRESHOLD: 0.65
 };
 
 export const HARD_PROHIBITED_CODES = [
@@ -96,3 +92,4 @@ export const AUDIT_ACTORS = {
   SIMULATOR: 'SIMULATOR',
   HUMAN: 'HUMAN'
 };
+

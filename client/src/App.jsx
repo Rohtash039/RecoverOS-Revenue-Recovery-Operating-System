@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AppShell } from './components/layout/AppShell';
+import { useCurrency } from './context/CurrencyContext';
 import { KpiCards } from './components/dashboard/KpiCards';
 import { RecoveryFunnel } from './components/dashboard/RecoveryFunnel';
 import { AnalyticsCharts } from './components/dashboard/AnalyticsCharts';
@@ -14,34 +15,30 @@ import { AuditLogTable } from './components/audit/AuditLogTable';
 import { RecoverOSAPI } from './api/client';
 
 export default function App() {
+  const { currency } = useCurrency();
   const [currentTab, setCurrentTab] = useState('overview');
-  
-  // Dashboard & Queue state (100% dynamic from backend)
+
   const [summary, setSummary] = useState(null);
   const [cases, setCases] = useState([]);
   const [queuePagination, setQueuePagination] = useState({ total: 0, page: 1, limit: 100 });
   const [activities, setActivities] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
-  
-  // Filters
+
   const [search, setSearch] = useState('');
   const [selectedState, setSelectedState] = useState('ALL');
   const [minScore, setMinScore] = useState('');
   const [actorFilter, setActorFilter] = useState('ALL');
 
-  // Modals & Selected items
   const [selectedCaseDetail, setSelectedCaseDetail] = useState(null);
   const [whyNotRetryData, setWhyNotRetryData] = useState(null);
   const [whyNotRetryCase, setWhyNotRetryCase] = useState(null);
   const [approvalTargetCase, setApprovalTargetCase] = useState(null);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
 
-  // Batch Simulation State
   const [activeBatch, setActiveBatch] = useState(null);
   const [isRunningBatch, setIsRunningBatch] = useState(false);
   const pollingRef = useRef(null);
 
-  // Fetch initial data
   const fetchData = async () => {
     try {
       const [sumData, queueData, actData, auditData] = await Promise.all([
@@ -61,10 +58,24 @@ export default function App() {
   };
 
   useEffect(() => {
+    const initAndReset = async () => {
+      try {
+        await RecoverOSAPI.resetSimulation();
+        setActiveBatch(null);
+        setIsRunningBatch(false);
+      } catch (err) {
+        console.warn('[Auto-reset on refresh error]', err);
+      } finally {
+        await fetchData();
+      }
+    };
+    initAndReset();
+  }, []);
+
+  useEffect(() => {
     fetchData();
   }, [selectedState, search, minScore, actorFilter]);
 
-  // Polling for active batch runs
   useEffect(() => {
     if (!isRunningBatch || !activeBatch?.batchId) return;
 
@@ -73,7 +84,6 @@ export default function App() {
         const batchStatus = await RecoverOSAPI.getBatchStatus(activeBatch.batchId);
         setActiveBatch(batchStatus);
 
-        // Fetch latest summary & cases as progress updates
         const sumData = await RecoverOSAPI.getDashboardSummary();
         setSummary(sumData);
 
@@ -94,7 +104,6 @@ export default function App() {
     };
   }, [isRunningBatch, activeBatch?.batchId]);
 
-  // Handler: Run Batch Simulation
   const handleRunBatch = async () => {
     try {
       setIsRunningBatch(true);
@@ -106,7 +115,6 @@ export default function App() {
     }
   };
 
-  // Handler: Reset Seed Data
   const handleResetSeed = async () => {
     try {
       await RecoverOSAPI.resetSimulation();
@@ -118,7 +126,6 @@ export default function App() {
     }
   };
 
-  // Handler: Open Case Detail Inspector
   const handleSelectCase = async (c) => {
     try {
       const fullDetail = await RecoverOSAPI.getRecoveryCaseById(c.recoveryCaseId);
@@ -128,7 +135,6 @@ export default function App() {
     }
   };
 
-  // Handler: Why Not Retry Modal
   const handleWhyNotRetry = async (c) => {
     try {
       const explanation = await RecoverOSAPI.getWhyNotRetry(c.recoveryCaseId);
@@ -139,8 +145,7 @@ export default function App() {
     }
   };
 
-  // Handler: Human Action (Approve / Reject Escalation)
-  const handleHumanActionExecute = async (caseId, actionType, operatorId = 'ops_lead_rohtash') => {
+  const handleHumanActionExecute = async (caseId, actionType, operatorId = 'ops_lead_priya') => {
     try {
       setIsProcessingAction(true);
       await RecoverOSAPI.postCaseAction(caseId, actionType, operatorId);
@@ -157,7 +162,6 @@ export default function App() {
     }
   };
 
-  // Handler: Analyze single case
   const handleAnalyzeSingleCase = async (caseId) => {
     try {
       setIsProcessingAction(true);
@@ -189,17 +193,16 @@ export default function App() {
       activeBatch={activeBatch}
       escalatedCount={escalatedCasesCount}
     >
-      {/* Live Batch Progress Banner */}
-      <div className="shrink-0 mb-3">
+
+      <div className="shrink-0 mb-3" key={`batch-banner-${currency}`}>
         <BatchProgressBanner activeBatch={activeBatch} totalCases={summary?.totalCasesCount || 100} />
       </div>
 
-      {/* View: Overview Command Center */}
       {currentTab === 'overview' && (
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-6 pr-1">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-6 pr-1" key={`overview-${currency}`}>
           <KpiCards summary={summary} />
           <RecoveryFunnel funnel={summary?.pipelineFunnel} />
-          <AnalyticsCharts 
+          <AnalyticsCharts
             categories={summary?.recoveryByFailureCategory || []}
             expectedVsActual={summary?.expectedVsActual}
             casesByState={summary?.casesByState}
@@ -207,9 +210,8 @@ export default function App() {
         </div>
       )}
 
-      {/* View: Recovery Queue */}
       {currentTab === 'queue' && (
-        <div className="flex-1 min-h-0 flex flex-col space-y-3.5 overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col space-y-3.5 overflow-hidden" key={`queue-${currency}`}>
           <QueueFilters
             search={search}
             onSearchChange={setSearch}
@@ -228,16 +230,14 @@ export default function App() {
         </div>
       )}
 
-      {/* View: Agent Activity Stream */}
       {currentTab === 'activity' && (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden" key={`activity-${currency}`}>
           <AgentActivityStream activities={activities} />
         </div>
       )}
 
-      {/* View: Audit Log Table */}
       {currentTab === 'audit' && (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden" key={`audit-${currency}`}>
           <AuditLogTable
             auditLogs={auditLogs}
             actorFilter={actorFilter}
@@ -246,7 +246,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Modals */}
       <CaseDetailInspector
         isOpen={!!selectedCaseDetail}
         onClose={() => setSelectedCaseDetail(null)}
@@ -279,3 +278,4 @@ export default function App() {
     </AppShell>
   );
 }
+

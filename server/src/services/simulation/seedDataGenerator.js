@@ -5,9 +5,9 @@ import { RecoveryCase } from '../../models/RecoveryCase.js';
 import { RecoveryAction } from '../../models/RecoveryAction.js';
 import { AuditLog } from '../../models/AuditLog.js';
 import { SimulationBatch } from '../../models/SimulationBatch.js';
-import { 
-  SIMULATION_REFERENCE_TIME, 
-  DEFAULT_SIMULATION_SEED, 
+import {
+  SIMULATION_REFERENCE_TIME,
+  DEFAULT_SIMULATION_SEED,
   FAILURE_CODE_TO_DIAGNOSIS_CATEGORY,
   CASE_STATES,
   AUDIT_ACTORS
@@ -16,9 +16,6 @@ import { calculateROS } from '../scoring/opportunityScorer.js';
 import { recordAuditLog } from '../audit/auditService.js';
 import { invalidateAnalyticsCache } from '../analytics/analyticsService.js';
 
-/**
- * Deterministic pseudo-random number generator (Mulberry32)
- */
 function createPrng(seedStr) {
   let hash = 0;
   for (let i = 0; i < seedStr.length; i++) {
@@ -37,14 +34,10 @@ function createPrng(seedStr) {
 const FIRST_NAMES = ['Aarav', 'Vivaan', 'Aditya', 'Vihaan', 'Arjun', 'Sai', 'Reyansh', 'Ayaan', 'Krishna', 'Ishaan', 'Shaurya', 'Atharv', 'Ananya', 'Diya', 'Myra', 'Sara', 'Aditi', 'Navya', 'Avani', 'Kiara'];
 const LAST_NAMES = ['Sharma', 'Verma', 'Patel', 'Reddy', 'Mehta', 'Nair', 'Iyer', 'Gupta', 'Singh', 'Chopra', 'Malhotra', 'Mukherjee', 'Bose', 'Rao', 'Deshmukh', 'Joshi'];
 
-/**
- * Generates 100 calibrated synthetic transactions and resets DB to clean AT_RISK state.
- */
 export async function generateSeedDataset(seedKey = DEFAULT_SIMULATION_SEED) {
   invalidateAnalyticsCache();
   const prng = createPrng(seedKey);
 
-  // Clear existing collections to guarantee clean demo baseline
   await Customer.deleteMany({});
   await Transaction.deleteMany({});
   await RecoveryCase.deleteMany({});
@@ -69,7 +62,6 @@ export async function generateSeedDataset(seedKey = DEFAULT_SIMULATION_SEED) {
   const transactions = [];
   const recoveryCases = [];
 
-  // Ref time in ms (2026-09-04 12:00:00 UTC)
   const refMs = SIMULATION_REFERENCE_TIME.getTime();
 
   for (const dist of failureDistributions) {
@@ -78,7 +70,6 @@ export async function generateSeedDataset(seedKey = DEFAULT_SIMULATION_SEED) {
       const txnId = `TXN-${String(8000 + caseIndex).padStart(4, '0')}`;
       const custId = `CUST-${String(500 + caseIndex).padStart(4, '0')}`;
 
-      // Customer generation
       const fName = FIRST_NAMES[Math.floor(prng() * FIRST_NAMES.length)];
       const lName = LAST_NAMES[Math.floor(prng() * LAST_NAMES.length)];
       const name = `${fName} ${lName}`;
@@ -120,22 +111,20 @@ export async function generateSeedDataset(seedKey = DEFAULT_SIMULATION_SEED) {
       };
       customers.push(customerObj);
 
-      // Amount generation
       let amount = 0;
       if (caseIndex === 3 || caseIndex === 17 || caseIndex === 42 || caseIndex === 68) {
-        // High-Value cases >= 50k
-        amount = 52000 + Math.floor(prng() * 30000); // 52,000 - 82,000
+
+        amount = 52000 + Math.floor(prng() * 30000);
       } else if (dist.eventType === 'INVOICE_OVERDUE') {
-        amount = 18000 + Math.floor(prng() * 32000); // 18,000 - 50,000 (B2B commercial ticket sizes)
+        amount = 18000 + Math.floor(prng() * 32000);
       } else if (caseIndex <= 20) {
-        amount = 15000 + Math.floor(prng() * 25000); // 15,000 - 40,000
+        amount = 15000 + Math.floor(prng() * 25000);
       } else if (caseIndex <= 80) {
-        amount = 1200 + Math.floor(prng() * 9000);   // 1,200 - 10,200 (optimal)
+        amount = 1200 + Math.floor(prng() * 9000);
       } else {
-        amount = 499 + Math.floor(prng() * 500);     // 499 - 999
+        amount = 499 + Math.floor(prng() * 500);
       }
 
-      // Timestamp & payment method generation
       let createdAt;
       let paymentMethod;
       let invoiceMetadata = {};
@@ -178,7 +167,6 @@ export async function generateSeedDataset(seedKey = DEFAULT_SIMULATION_SEED) {
       };
       transactions.push(txnObj);
 
-      // Recovery Case baseline calculation
       const { recoveryScore, scoreFactors } = calculateROS(txnObj, customerObj, SIMULATION_REFERENCE_TIME);
       const normCategory = FAILURE_CODE_TO_DIAGNOSIS_CATEGORY[dist.code] || 'UNKNOWN';
 
@@ -204,12 +192,10 @@ export async function generateSeedDataset(seedKey = DEFAULT_SIMULATION_SEED) {
     }
   }
 
-  // Bulk Insert
   await Customer.insertMany(customers);
   await Transaction.insertMany(transactions);
   await RecoveryCase.insertMany(recoveryCases);
 
-  // Record initial audit event for seed
   for (const rc of recoveryCases) {
     await recordAuditLog({
       recoveryCaseId: rc.recoveryCaseId,
@@ -231,3 +217,4 @@ export async function generateSeedDataset(seedKey = DEFAULT_SIMULATION_SEED) {
     totalAtRisk: recoveryCases.reduce((acc, c) => acc + c.initialRevenueAtRisk, 0)
   };
 }
+

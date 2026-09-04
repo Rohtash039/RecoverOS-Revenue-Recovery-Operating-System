@@ -1,15 +1,13 @@
-import React from 'react';
 import { ScorePill } from '../common/ScorePill';
-import { StateBadge, DecisionBadge } from '../common/Badge';
+import { StateBadge, DecisionBadge, InvoiceBadge } from '../common/Badge';
 import { formatINR } from '../../utils/formatters';
 import { ACTION_LABELS } from '../../utils/constants';
-import { ExternalLink, HelpCircle, ShieldAlert } from 'lucide-react';
 
-export function RecoveryQueueTable({ 
-  cases = [], 
-  onSelectCase, 
-  onWhyNotRetry, 
-  onOpenApproval 
+export function RecoveryQueueTable({
+  cases = [],
+  onSelectCase,
+  onWhyNotRetry,
+  onOpenApproval
 }) {
   if (!cases || cases.length === 0) {
     return (
@@ -44,32 +42,41 @@ export function RecoveryQueueTable({
               const isHardProhibited = ['FRAUD_SUSPECTED', 'CARD_STOLEN', 'CARD_LOST', 'ACCOUNT_CLOSED', 'DO_NOT_HONOR_PERMANENT'].includes(c.transaction?.failureCode) ||
                 ['FRAUD_RISK', 'HARD_DECLINE', 'ACCOUNT_CLOSED'].includes(c.normalizedFailureCategory);
               const isBlocked = c.state === 'AT_RISK' && isHardProhibited;
+              const isInvoice = c.transaction?.eventType === 'INVOICE_OVERDUE' || Boolean(c.transaction?.metadata?.invoiceNumber);
 
               return (
-                <tr 
+                <tr
                   key={c.recoveryCaseId}
                   className="hover:bg-neutral-50/80 dark:hover:bg-neutral-900/50 transition-colors group"
                 >
-                  {/* Transaction / Case ID */}
-                  <td className="py-2.5 px-3.5 font-mono">
-                    <button
-                      onClick={() => onSelectCase(c)}
-                      className="text-sky-600 dark:text-sky-400 hover:underline text-left font-medium flex items-center gap-1"
-                    >
-                      <span>{c.transactionId}</span>
-                    </button>
-                    <div className="text-[10px] text-neutral-400 dark:text-neutral-500 font-normal">{c.recoveryCaseId}</div>
-                  </td>
 
-                  {/* Customer */}
-                  <td className="py-2.5 px-3.5">
-                    <div className="text-neutral-900 dark:text-neutral-100 font-medium">{c.customer?.name || 'Customer'}</div>
-                    <div className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                      {c.customer?.tier} • {c.customer?.previousSuccessfulPayments || 0} successes
+                  <td className="py-2.5 px-3.5 font-mono">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <button
+                        onClick={() => onSelectCase(c)}
+                        className="text-sky-600 dark:text-sky-400 hover:underline text-left font-medium flex items-center gap-1"
+                      >
+                        <span>{c.transactionId}</span>
+                      </button>
+                      {isInvoice && (
+                        <InvoiceBadge
+                          invoiceNumber={c.transaction?.metadata?.invoiceNumber}
+                          daysOverdue={c.transaction?.metadata?.daysOverdue}
+                        />
+                      )}
+                    </div>
+                    <div className="text-[10px] text-neutral-400 dark:text-neutral-500 font-normal">
+                      {c.recoveryCaseId} {c.transaction?.metadata?.invoiceNumber ? `• ${c.transaction.metadata.invoiceNumber}` : ''}
                     </div>
                   </td>
 
-                  {/* Amount */}
+                  <td className="py-2.5 px-3.5">
+                    <div className="text-neutral-900 dark:text-neutral-100 font-medium">{c.customer?.name || 'Customer'}</div>
+                    <div className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                      {c.customer?.tier} • {isInvoice && c.transaction?.metadata?.dueDate ? `Due: ${new Date(c.transaction.metadata.dueDate).toLocaleDateString()}` : `${c.customer?.previousSuccessfulPayments || 0} successes`}
+                    </div>
+                  </td>
+
                   <td className="py-2.5 px-3.5 text-right font-mono">
                     <div className="font-semibold text-neutral-900 dark:text-neutral-100">
                       {formatINR(c.initialRevenueAtRisk)}
@@ -81,22 +88,19 @@ export function RecoveryQueueTable({
                     )}
                   </td>
 
-                  {/* Failure Code & Category */}
                   <td className="py-2.5 px-3.5 max-w-[160px]">
                     <div className="text-neutral-800 dark:text-neutral-200 font-medium truncate">
-                      {c.transaction?.failureCode?.replace(/_/g, ' ') || c.normalizedFailureCategory?.replace(/_/g, ' ')}
+                      {isInvoice ? 'INVOICE OVERDUE' : (c.transaction?.failureCode?.replace(/_/g, ' ') || c.normalizedFailureCategory?.replace(/_/g, ' '))}
                     </div>
                     <div className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">
-                      {c.transaction?.failureReason || c.normalizedFailureCategory}
+                      {isInvoice ? `${c.transaction?.metadata?.daysOverdue || 30}d overdue • 90d SLA` : (c.transaction?.failureReason || c.normalizedFailureCategory)}
                     </div>
                   </td>
 
-                  {/* ROS Score */}
                   <td className="py-2.5 px-3.5 text-center">
                     <ScorePill score={c.recoveryScore} />
                   </td>
 
-                  {/* AI Recommendation */}
                   <td className="py-2.5 px-3.5">
                     <button
                       onClick={() => onSelectCase(c)}
@@ -114,7 +118,6 @@ export function RecoveryQueueTable({
                     </button>
                   </td>
 
-                  {/* Policy Decision */}
                   <td className="py-2.5 px-3.5">
                     {c.policyEvaluation?.decision ? (
                       <DecisionBadge decision={c.policyEvaluation.decision} />
@@ -123,12 +126,10 @@ export function RecoveryQueueTable({
                     )}
                   </td>
 
-                  {/* State Badge */}
                   <td className="py-2.5 px-3.5">
                     <StateBadge state={c.state} isBlocked={isBlocked} />
                   </td>
 
-                  {/* Action Buttons */}
                   <td className="py-2.5 px-3.5 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1.5">
                       {isEscalated && (
@@ -167,3 +168,4 @@ export function RecoveryQueueTable({
     </div>
   );
 }
+

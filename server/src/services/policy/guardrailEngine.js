@@ -1,15 +1,10 @@
-import { 
-  POLICY_CONFIG, 
-  HARD_PROHIBITED_CODES, 
-  RECOVERY_ACTIONS, 
-  SIMULATION_REFERENCE_TIME 
+import {
+  POLICY_CONFIG,
+  HARD_PROHIBITED_CODES,
+  RECOVERY_ACTIONS,
+  SIMULATION_REFERENCE_TIME
 } from '../../config/constants.js';
 
-/**
- * Policy & Guardrail Engine
- * Evaluates proposed actions against deterministic business policies in strict precedence order.
- * Returns tri-state decision: APPROVE, MODIFY, or REJECT with human-readable reason strings.
- */
 export function evaluatePolicy(recoveryCase, recommendedAction, referenceTime = SIMULATION_REFERENCE_TIME) {
   const failureCode = recoveryCase.failureCode || recoveryCase.transaction?.failureCode;
   const initialRevenueAtRisk = recoveryCase.initialRevenueAtRisk || recoveryCase.transaction?.amount || 0;
@@ -22,9 +17,8 @@ export function evaluatePolicy(recoveryCase, recommendedAction, referenceTime = 
   const createdMs = new Date(createdAt).getTime();
   const elapsedHours = Math.max(0, (refMs - createdMs) / (1000 * 60 * 60));
 
-  // 1. Precedence 1: Recovery Window Expired (> 48h for checkout/payments, > 90d for B2B commercial receivables)
-  const isReceivable = recoveryCase.eventType === 'INVOICE_OVERDUE' || 
-                       failureCode?.startsWith('INVOICE_OVERDUE') || 
+  const isReceivable = recoveryCase.eventType === 'INVOICE_OVERDUE' ||
+                       failureCode?.startsWith('INVOICE_OVERDUE') ||
                        recoveryCase.transaction?.eventType === 'INVOICE_OVERDUE';
   const maxWindowHours = isReceivable ? (90 * 24) : POLICY_CONFIG.MAX_RECOVERY_WINDOW_HOURS;
 
@@ -38,8 +32,6 @@ export function evaluatePolicy(recoveryCase, recommendedAction, referenceTime = 
     };
   }
 
-  // 2. Precedence 2: Hard Prohibited Failure (Fraud / Stolen Card)
-  // Hard prohibited codes are NEVER overridden by subsequent rules (even if high value)
   if (HARD_PROHIBITED_CODES.includes(failureCode)) {
     return {
       decision: 'REJECT',
@@ -50,7 +42,6 @@ export function evaluatePolicy(recoveryCase, recommendedAction, referenceTime = 
     };
   }
 
-  // 3. Precedence 3: Retry Limit Breached (>= 2)
   if (recommendedAction === RECOVERY_ACTIONS.RETRY_PAYMENT && retryCount >= POLICY_CONFIG.MAX_PAYMENT_RETRIES) {
     return {
       decision: 'MODIFY',
@@ -61,7 +52,6 @@ export function evaluatePolicy(recoveryCase, recommendedAction, referenceTime = 
     };
   }
 
-  // 4. Precedence 4: Contact Limit Breached (>= 2)
   if (
     [RECOVERY_ACTIONS.SEND_PAYMENT_REMINDER, RECOVERY_ACTIONS.SEND_CHECKOUT_REMINDER, RECOVERY_ACTIONS.SEND_INVOICE_REMINDER].includes(recommendedAction) &&
     contactCount >= POLICY_CONFIG.MAX_CUSTOMER_CONTACTS
@@ -75,7 +65,6 @@ export function evaluatePolicy(recoveryCase, recommendedAction, referenceTime = 
     };
   }
 
-  // 5. Precedence 5: High-Value Escalation (>= ₹50,000)
   if (initialRevenueAtRisk >= POLICY_CONFIG.HIGH_VALUE_THRESHOLD) {
     return {
       decision: 'MODIFY',
@@ -86,7 +75,6 @@ export function evaluatePolicy(recoveryCase, recommendedAction, referenceTime = 
     };
   }
 
-  // 6. Precedence 6: Low Diagnostic Confidence (< 0.65)
   if (aiDiagnosis?.confidence && aiDiagnosis.confidence < POLICY_CONFIG.CONFIDENCE_THRESHOLD) {
     return {
       decision: 'MODIFY',
@@ -97,7 +85,6 @@ export function evaluatePolicy(recoveryCase, recommendedAction, referenceTime = 
     };
   }
 
-  // 7. Precedence 7: Default Approval
   return {
     decision: 'APPROVE',
     originalAction: recommendedAction,
@@ -106,3 +93,4 @@ export function evaluatePolicy(recoveryCase, recommendedAction, referenceTime = 
     evaluatedAt: new Date()
   };
 }
+

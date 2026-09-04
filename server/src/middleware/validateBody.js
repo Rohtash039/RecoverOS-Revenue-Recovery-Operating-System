@@ -1,7 +1,4 @@
-/**
- * Generic request body validation middleware using Zod schemas.
- * Returns structured 400 Bad Request with field-level error messages on validation failure.
- */
+
 export function validateBody(schema) {
   return (req, res, next) => {
     const result = schema.safeParse(req.body);
@@ -22,8 +19,8 @@ export function validateBody(schema) {
       });
     }
 
-    // Replace req.body with parsed/sanitized data (including defaults)
     req.body = result.data;
     next();
   };
 }
+

@@ -1,4 +1,3 @@
-import React from 'react';
 
 export function ScorePill({ score = 0, size = 'sm' }) {
   let badgeStyle = 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700';
@@ -26,3 +25,4 @@ export function ScorePill({ score = 0, size = 'sm' }) {
     </span>
   );
 }
+

@@ -1,5 +1,4 @@
-import React from 'react';
-import { Loader2, TrendingUp, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Loader2} from 'lucide-react';
 import { formatINR } from '../../utils/formatters';
 
 export function BatchProgressBanner({ activeBatch, totalCases = 100 }) {
@@ -22,7 +21,6 @@ export function BatchProgressBanner({ activeBatch, totalCases = 100 }) {
           </span>
         </div>
 
-        {/* Live Counters */}
         <div className="flex items-center gap-3 text-xs font-mono">
           <div className="text-emerald-700 dark:text-emerald-400 font-medium">
             Recovered: {formatINR(activeBatch.recoveredAmount || 0)} ({activeBatch.recoveredCases || 0})
@@ -36,9 +34,8 @@ export function BatchProgressBanner({ activeBatch, totalCases = 100 }) {
         </div>
       </div>
 
-      {/* Progress Bar */}
       <div className="w-full h-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
-        <div 
+        <div
           className="h-full bg-neutral-900 dark:bg-white transition-all duration-300 ease-out"
           style={{ width: `${percentage}%` }}
         />
@@ -46,3 +43,4 @@ export function BatchProgressBanner({ activeBatch, totalCases = 100 }) {
     </div>
   );
 }
+

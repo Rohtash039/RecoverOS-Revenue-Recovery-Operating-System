@@ -1,12 +1,11 @@
-import React from 'react';
-import { Search, Filter } from 'lucide-react';
+import { Search} from 'lucide-react';
 
-export function QueueFilters({ 
-  search, 
-  onSearchChange, 
-  selectedState, 
-  onStateSelect, 
-  minScore, 
+export function QueueFilters({
+  search,
+  onSearchChange,
+  selectedState,
+  onStateSelect,
+  minScore,
   onMinScoreChange,
   casesByState = {}
 }) {
@@ -20,7 +19,7 @@ export function QueueFilters({
 
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-[#121212] p-2.5 rounded-lg border border-neutral-200 dark:border-neutral-800 transition-colors shrink-0">
-      {/* State Filter Segmented Tabs */}
+
       <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
         {stateTabs.map(tab => {
           const isActive = selectedState === tab.id;
@@ -28,7 +27,7 @@ export function QueueFilters({
             <button
               key={tab.id}
               onClick={() => {
-                onSearchChange(''); // Empty search when clicking other section
+                onSearchChange('');
                 onStateSelect(tab.id);
               }}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
@@ -54,7 +53,6 @@ export function QueueFilters({
         })}
       </div>
 
-      {/* Search & ROS Filter */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1 sm:flex-initial">
           <Search className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -92,3 +90,4 @@ export function QueueFilters({
     </div>
   );
 }
+

@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: recoveros-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGO_URI
+        sync: false
+      - key: GROK_API_KEY
+        sync: false
+      - key: GROK_MODEL
+        value: grok-2-latest
+      - key: CLIENT_URL
+        sync: false
+      - key: AI_MODE
+        value: deterministic
+      - key: SIMULATION_SEED
+        value: RECOVEROS_BUILDATHON_2026
+      - key: API_KEY
+        sync: false

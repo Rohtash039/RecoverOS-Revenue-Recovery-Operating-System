@@ -22,7 +22,6 @@ async function runDeterminismTest() {
   console.log('=== [RecoverOS Test Suite] Starting Determinism & Guardrail Verification ===\n');
   await connectDB();
 
-  // PASS 1
   console.log('--- Step 1: Pass 1 Seed & Batch Execution ---');
   await generateSeedDataset();
   const batch1 = await startBatchRun('FAST');
@@ -39,7 +38,6 @@ async function runDeterminismTest() {
   - Escalated Cases: ${metrics1.casesByState[CASE_STATES.ESCALATED]}
   - Stopped Cases: ${metrics1.casesByState[CASE_STATES.STOPPED]}`);
 
-  // PASS 2
   console.log('\n--- Step 2: Pass 2 Seed & Batch Execution ---');
   await generateSeedDataset();
   const batch2 = await startBatchRun('FAST');
@@ -56,7 +54,6 @@ async function runDeterminismTest() {
   - Escalated Cases: ${metrics2.casesByState[CASE_STATES.ESCALATED]}
   - Stopped Cases: ${metrics2.casesByState[CASE_STATES.STOPPED]}`);
 
-  // Assertions
   console.log('\n--- Step 3: Verifying Determinism Assertions ---');
   const match = (
     metrics1.initialRevenueAtRisk === metrics2.initialRevenueAtRisk &&
@@ -70,41 +67,36 @@ async function runDeterminismTest() {
   );
 
   if (match) {
-    console.log('✅ DETERMINISM VERIFIED: Pass 1 and Pass 2 produced 100% identical financial attribution and state distributions.');
+    console.log(' DETERMINISM VERIFIED: Pass 1 and Pass 2 produced 100% identical financial attribution and state distributions.');
   } else {
-    console.error('❌ DETERMINISM FAILED: Discrepancy between Pass 1 and Pass 2.');
+    console.error(' DETERMINISM FAILED: Discrepancy between Pass 1 and Pass 2.');
     process.exit(1);
   }
 
-  // Guardrail Scenario Tests
   console.log('\n--- Step 4: Testing Guardrail Scenarios ---');
 
-  // 1. Fraud hard stop
   const fraudCase = await RecoveryCase.findOne({ normalizedFailureCategory: 'FRAUD_RISK' });
   if (fraudCase && fraudCase.state === CASE_STATES.STOPPED && fraudCase.recoveredAmount === 0) {
-    console.log(`✅ SCENARIO 1 (Fraud Hard Stop): Case ${fraudCase.recoveryCaseId} was stopped by policy. Recovered: ₹0.`);
+    console.log(` SCENARIO 1 (Fraud Hard Stop): Case ${fraudCase.recoveryCaseId} was stopped by policy. Recovered: ₹0.`);
   } else {
-    console.error('❌ SCENARIO 1 FAILED:', fraudCase);
+    console.error('SCENARIO 1 FAILED:', fraudCase);
   }
 
-  // 2. High-value escalation
   const highValCase = await RecoveryCase.findOne({ state: CASE_STATES.ESCALATED });
   if (highValCase && highValCase.initialRevenueAtRisk >= 50000) {
-    console.log(`✅ SCENARIO 2 (High-Value Escalation): Case ${highValCase.recoveryCaseId} (₹${highValCase.initialRevenueAtRisk.toLocaleString('en-IN')}) successfully escalated to human queue.`);
+    console.log(`SCENARIO 2 (High-Value Escalation): Case ${highValCase.recoveryCaseId} (₹${highValCase.initialRevenueAtRisk.toLocaleString('en-IN')}) successfully escalated to human queue.`);
 
-    // 3. Human Approval Test
     const txn = await Transaction.findOne({ transactionId: highValCase.transactionId });
     const approvedCase = await handleHumanAction(highValCase, txn, 'APPROVE_ESCALATION');
     if ([CASE_STATES.RECOVERED, CASE_STATES.STOPPED].includes(approvedCase.state)) {
-      console.log(`✅ SCENARIO 3 (Human Action Execution): Escalated case transitioned to ${approvedCase.state} upon human approval.`);
+      console.log(`SCENARIO 3 (Human Action Execution): Escalated case transitioned to ${approvedCase.state} upon human approval.`);
     } else {
-      console.error('❌ SCENARIO 3 FAILED: Case did not resolve correctly after human approval.');
+      console.error('SCENARIO 3 FAILED: Case did not resolve correctly after human approval.');
     }
   } else {
-    console.warn('⚠️ No escalated case found for test.');
+    console.warn('No escalated case found for test.');
   }
 
-  // 4. Idempotency test
   console.log('\n--- Step 5: Testing Idempotency Protection ---');
   let execCount = 0;
   const testFn = async () => {
@@ -131,12 +123,11 @@ async function runDeterminismTest() {
   });
 
   if (res1.idempotent === false && res2.idempotent === true && execCount === 1) {
-    console.log('✅ SCENARIO 4 (Idempotency Protection): Duplicate action request was blocked from re-execution.');
+    console.log('SCENARIO 4 (Idempotency Protection): Duplicate action request was blocked from re-execution.');
   } else {
-    console.error('❌ SCENARIO 4 FAILED: Idempotency execution count mismatch:', execCount);
+    console.error('SCENARIO 4 FAILED: Idempotency execution count mismatch:', execCount);
   }
 
-  // Reset database back to clean AT_RISK state for UI
   await generateSeedDataset();
   console.log('\n[RecoverOS] Test suite completed successfully. DB restored to clean AT_RISK seed state.\n');
 
@@ -144,3 +135,4 @@ async function runDeterminismTest() {
 }
 
 runDeterminismTest();
+

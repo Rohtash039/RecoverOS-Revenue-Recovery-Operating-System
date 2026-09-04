@@ -2,12 +2,9 @@ import rateLimit from 'express-rate-limit';
 import { recordAuditLog } from '../services/audit/auditService.js';
 import { AUDIT_ACTORS } from '../config/constants.js';
 
-/**
- * Standardized 429 rate limit response handler with append-only audit logging.
- */
 function createRateLimitHandler(limiterName) {
   return async (req, res) => {
-    // Record rate limit violation in append-only audit ledger
+
     await recordAuditLog({
       recoveryCaseId: req.params?.id || 'N/A',
       transactionId: req.params?.id || 'N/A',
@@ -35,9 +32,6 @@ function createRateLimitHandler(limiterName) {
   };
 }
 
-/**
- * Global API rate limiter: 300 requests per minute per IP.
- */
 export const globalLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 300,
@@ -46,9 +40,6 @@ export const globalLimiter = rateLimit({
   handler: createRateLimitHandler('global')
 });
 
-/**
- * Strict limiter for expensive simulation and reset operations: 10 requests per minute per IP.
- */
 export const strictSimulationLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
@@ -56,3 +47,4 @@ export const strictSimulationLimiter = rateLimit({
   legacyHeaders: false,
   handler: createRateLimitHandler('simulation_mutation')
 });
+

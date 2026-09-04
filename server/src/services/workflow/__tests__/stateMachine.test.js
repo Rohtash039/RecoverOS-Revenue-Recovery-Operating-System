@@ -33,18 +33,17 @@ describe('Workflow State Machine (validateStateTransition)', () => {
   });
 
   it('should enforce actor: HUMAN on transition from ESCALATED to EXECUTING or STOPPED', () => {
-    // Valid with HUMAN actor
+
     expect(() => validateStateTransition(CASE_STATES.ESCALATED, CASE_STATES.EXECUTING, AUDIT_ACTORS.HUMAN)).not.toThrow();
     expect(() => validateStateTransition(CASE_STATES.ESCALATED, CASE_STATES.STOPPED, AUDIT_ACTORS.HUMAN)).not.toThrow();
 
-    // Rejected with SYSTEM actor
     expect(() => validateStateTransition(CASE_STATES.ESCALATED, CASE_STATES.EXECUTING, AUDIT_ACTORS.SYSTEM)).toThrowError(
       /requires actor 'HUMAN'/
     );
 
-    // Rejected with AI_AGENT actor
     expect(() => validateStateTransition(CASE_STATES.ESCALATED, CASE_STATES.EXECUTING, AUDIT_ACTORS.AI_AGENT)).toThrowError(
       /requires actor 'HUMAN'/
     );
   });
 });
+

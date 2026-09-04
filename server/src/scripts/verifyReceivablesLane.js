@@ -21,10 +21,10 @@ async function runReceivablesVerification() {
 
   function assert(condition, message) {
     if (condition) {
-      console.log(`✅ PASS: ${message}`);
+      console.log(`PASS: ${message}`);
       passed++;
     } else {
-      console.error(`❌ FAIL: ${message}`);
+      console.error(`FAIL: ${message}`);
       failed++;
     }
   }
@@ -32,9 +32,6 @@ async function runReceivablesVerification() {
   try {
     await generateSeedDataset();
 
-    // -------------------------------------------------------------
-    // Test 1: Verify seeded dataset contains B2B overdue receivables cases
-    // -------------------------------------------------------------
     const receivablesCases = await RecoveryCase.find({
       normalizedFailureCategory: 'RECEIVABLE_OVERDUE'
     });
@@ -44,9 +41,6 @@ async function runReceivablesVerification() {
       `Seeded dataset contains 20 B2B overdue receivables cases (found: ${receivablesCases.length})`
     );
 
-    // -------------------------------------------------------------
-    // Test 2: Verify invoice metadata attached on transactions
-    // -------------------------------------------------------------
     const sampleReceivableCase = receivablesCases[0];
     const txn = await Transaction.findOne({ transactionId: sampleReceivableCase.transactionId });
     const cust = await Customer.findOne({ customerId: sampleReceivableCase.customerId });
@@ -58,18 +52,12 @@ async function runReceivablesVerification() {
       `Transaction contains invoice metadata: invoiceNumber='${txn.metadata?.invoiceNumber}', daysOverdue=${txn.metadata?.daysOverdue}`
     );
 
-    // -------------------------------------------------------------
-    // Test 3: Verify Opportunity Scorer calculates ROS with recency curve for receivables
-    // -------------------------------------------------------------
     const rosResult = calculateROS(txn, cust, SIMULATION_REFERENCE_TIME);
     assert(
       rosResult.recoveryScore > 0 && rosResult.scoreFactors.failureRecoverability === 85,
       `ROS scored B2B invoice case properly: score=${rosResult.recoveryScore}/100, recoverability=${rosResult.scoreFactors.failureRecoverability}`
     );
 
-    // -------------------------------------------------------------
-    // Test 4: Verify Fallback Engine recommends SEND_INVOICE_REMINDER
-    // -------------------------------------------------------------
     const diagnosis = getFallbackDiagnosis(txn, cust);
     assert(
       diagnosis.diagnosisCategory === 'RECEIVABLE_OVERDUE' &&
@@ -77,9 +65,6 @@ async function runReceivablesVerification() {
       `Fallback Engine recommended action '${diagnosis.recommendedAction}' with category '${diagnosis.diagnosisCategory}'`
     );
 
-    // -------------------------------------------------------------
-    // Test 5: Verify Guardrail Engine allows overdue invoice (> 48h) under 90-day B2B SLA window
-    // -------------------------------------------------------------
     const policyResult = evaluatePolicy(
       { ...sampleReceivableCase.toObject(), failureCode: txn.failureCode, eventType: txn.eventType, createdAt: txn.createdAt },
       diagnosis.recommendedAction,
@@ -90,9 +75,6 @@ async function runReceivablesVerification() {
       `Guardrail Engine approved 30-day overdue invoice under B2B 90-day SLA window exception`
     );
 
-    // -------------------------------------------------------------
-    // Test 6: Verify Seeded Simulator executes SEND_INVOICE_REMINDER
-    // -------------------------------------------------------------
     const simOutcome = simulateExecutionOutcome(
       {
         recoveryCaseId: sampleReceivableCase.recoveryCaseId,
@@ -109,9 +91,6 @@ async function runReceivablesVerification() {
       `Seeded Simulator executed SEND_INVOICE_REMINDER resulting in '${simOutcome.result}'`
     );
 
-    // -------------------------------------------------------------
-    // Test 7: Verify Batch Run processes and Analytics Breakdown includes RECEIVABLE_OVERDUE
-    // -------------------------------------------------------------
     console.log('\n[Step] Running batch to verify end-to-end analytics breakdown...');
     const batch = await startBatchRun('FAST');
     while (true) {
@@ -135,3 +114,4 @@ async function runReceivablesVerification() {
 }
 
 runReceivablesVerification();
+

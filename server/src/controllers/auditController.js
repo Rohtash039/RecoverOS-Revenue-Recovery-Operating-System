@@ -68,8 +68,7 @@ const EVENT_CHRONO_RANK = {
 export async function getAgentActivityStream(req, res, next) {
   try {
     const { limit = 50 } = req.query;
-    
-    // Fetch decisions, policy checks, human approvals, action executions, and simulator outcomes
+
     const logs = await AuditLog.find({
       actor: { $in: ['AI_AGENT', 'POLICY_ENGINE', 'SIMULATOR', 'HUMAN', 'SYSTEM'] },
       event: { $nin: ['CASE_CREATED', 'ROS_CALCULATED'] }
@@ -79,8 +78,6 @@ export async function getAgentActivityStream(req, res, next) {
 
     const logDocs = logs.map(l => l.toObject());
 
-    // Deterministic ordering: latest transaction events appear first,
-    // while events within the same 1-second burst for the same case follow forward workflow order
     logDocs.sort((a, b) => {
       const timeA = new Date(a.timestamp).getTime();
       const timeB = new Date(b.timestamp).getTime();
@@ -102,3 +99,4 @@ export async function getAgentActivityStream(req, res, next) {
     next(error);
   }
 }
+

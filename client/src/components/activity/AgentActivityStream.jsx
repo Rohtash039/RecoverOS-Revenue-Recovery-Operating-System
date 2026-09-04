@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { ActorBadge } from '../common/Badge';
 import { formatDate, formatINR } from '../../utils/formatters';
 import { Activity, Search, Clock, ArrowRight, ShieldCheck, CheckCircle2, AlertTriangle, XCircle, Filter } from 'lucide-react';
@@ -7,12 +7,11 @@ export function AgentActivityStream({ activities = [] }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedActor, setSelectedActor] = useState('ALL');
 
-  // Filter activities based on search and selected actor
   const filteredActivities = useMemo(() => {
     return activities.filter((act) => {
       const matchesActor = selectedActor === 'ALL' || act.actor === selectedActor;
       const term = searchTerm.toLowerCase();
-      const matchesSearch = !searchTerm || 
+      const matchesSearch = !searchTerm ||
         act.transactionId?.toLowerCase().includes(term) ||
         act.event?.toLowerCase().includes(term) ||
         act.actionTaken?.toLowerCase().includes(term) ||
@@ -21,7 +20,6 @@ export function AgentActivityStream({ activities = [] }) {
     });
   }, [activities, selectedActor, searchTerm]);
 
-  // Actor counts
   const actorCounts = useMemo(() => {
     const counts = { ALL: activities.length, AI_AGENT: 0, POLICY_ENGINE: 0, SIMULATOR: 0, HUMAN: 0 };
     activities.forEach(a => {
@@ -40,7 +38,7 @@ export function AgentActivityStream({ activities = [] }) {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col space-y-4 overflow-hidden">
-      {/* Header & Controls */}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div>
           <div className="flex items-center gap-2">
@@ -58,7 +56,7 @@ export function AgentActivityStream({ activities = [] }) {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Search Input */}
+
           <div className="relative">
             <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
@@ -81,7 +79,6 @@ export function AgentActivityStream({ activities = [] }) {
         </div>
       </div>
 
-      {/* Filter Tabs */}
       <div className="flex items-center gap-1.5 p-1 bg-neutral-100 dark:bg-[#141414] border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-x-auto shrink-0">
         {actors.map(({ key, label }) => {
           const count = actorCounts[key] || 0;
@@ -90,7 +87,7 @@ export function AgentActivityStream({ activities = [] }) {
             <button
               key={key}
               onClick={() => {
-                setSearchTerm(''); // Empty search when clicking other section
+                setSearchTerm('');
                 setSelectedActor(key);
               }}
               className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-2 ${
@@ -101,8 +98,8 @@ export function AgentActivityStream({ activities = [] }) {
             >
               <span>{label}</span>
               <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
-                isActive 
-                  ? 'bg-neutral-100 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200' 
+                isActive
+                  ? 'bg-neutral-100 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200'
                   : 'bg-neutral-200/60 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
               }`}>
                 {count}
@@ -112,7 +109,6 @@ export function AgentActivityStream({ activities = [] }) {
         })}
       </div>
 
-      {/* Activity Cards List */}
       <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1">
         {filteredActivities.length === 0 ? (
           <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#141414] p-12 text-center">
@@ -128,7 +124,7 @@ export function AgentActivityStream({ activities = [] }) {
               key={act.auditId}
               className="rounded-lg border border-neutral-200 dark:border-neutral-800/90 bg-white dark:bg-[#141414] p-4 sm:p-5 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all shadow-sm"
             >
-              {/* Top Row: Actor, TXN, Event & Meta */}
+
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                 <div className="flex flex-wrap items-center gap-2.5">
                   <ActorBadge actor={act.actor} />
@@ -150,14 +146,12 @@ export function AgentActivityStream({ activities = [] }) {
                   )}
                 </div>
 
-                {/* Timestamp */}
                 <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 font-mono shrink-0">
                   <Clock className="w-3 h-3 text-neutral-400" />
                   <span>{formatDate(act.timestamp)}</span>
                 </div>
               </div>
 
-              {/* Reason / Context Section with ample breathing room */}
               {act.reason && (
                 <div className="mt-3.5 pt-3 border-t border-neutral-100 dark:border-neutral-800/70">
                   <p className="text-[13px] leading-relaxed font-sans text-neutral-700 dark:text-neutral-300">
@@ -166,7 +160,6 @@ export function AgentActivityStream({ activities = [] }) {
                 </div>
               )}
 
-              {/* Financial Impact / Additional metadata */}
               {act.financialImpact > 0 && (
                 <div className="mt-3 pt-2.5 flex items-center justify-between">
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 font-mono">
@@ -182,3 +175,4 @@ export function AgentActivityStream({ activities = [] }) {
     </div>
   );
 }
+

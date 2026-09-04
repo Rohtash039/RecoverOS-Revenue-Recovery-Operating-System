@@ -1,6 +1,5 @@
-import React from 'react';
-import { 
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend 
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts';
 import { formatINR, formatShortINR } from '../../utils/formatters';
 
@@ -44,7 +43,7 @@ export function AnalyticsCharts({ categories = [], expectedVsActual = {}, casesB
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
-      {/* 1. Recovery by Failure Category (Bar Chart) */}
+
       <div className="lg:col-span-2 p-4 rounded-lg bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 flex flex-col justify-between transition-colors">
         <div className="flex items-center justify-between mb-3">
           <div>
@@ -62,23 +61,23 @@ export function AnalyticsCharts({ categories = [], expectedVsActual = {}, casesB
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 25 }}>
               <CartesianGrid strokeDasharray="2 2" stroke="#737373" strokeOpacity={0.2} vertical={false} />
-              <XAxis 
-                dataKey="name" 
-                stroke="#A3A3A3" 
-                fontSize={10} 
+              <XAxis
+                dataKey="name"
+                stroke="#A3A3A3"
+                fontSize={10}
                 angle={-15}
                 textAnchor="end"
                 interval={0}
               />
-              <YAxis 
-                stroke="#A3A3A3" 
-                fontSize={10} 
+              <YAxis
+                stroke="#A3A3A3"
+                fontSize={10}
                 tickFormatter={(val) => formatShortINR(val)}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Legend 
-                verticalAlign="top" 
-                height={26} 
+              <Legend
+                verticalAlign="top"
+                height={26}
                 formatter={(value) => <span className="text-xs text-neutral-600 dark:text-neutral-400">{value === 'atRisk' ? 'Initial at Risk' : 'Recovered'}</span>}
               />
               <Bar dataKey="atRisk" fill="#A3A3A3" radius={[2, 2, 0, 0]} name="atRisk" />
@@ -88,9 +87,8 @@ export function AnalyticsCharts({ categories = [], expectedVsActual = {}, casesB
         </div>
       </div>
 
-      {/* 2. Expected vs Actual & Resolution Outcomes */}
       <div className="space-y-3.5">
-        {/* Expected vs Actual */}
+
         <div className="p-4 rounded-lg bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 space-y-2.5 transition-colors">
           <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider">
             Attribution vs Model Estimate
@@ -111,7 +109,6 @@ export function AnalyticsCharts({ categories = [], expectedVsActual = {}, casesB
           </div>
         </div>
 
-        {/* Resolution State Distribution */}
         <div className="p-4 rounded-lg bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 space-y-2.5 transition-colors">
           <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider">
             Terminal State Breakdown
@@ -144,3 +141,4 @@ export function AnalyticsCharts({ categories = [], expectedVsActual = {}, casesB
     </div>
   );
 }
+

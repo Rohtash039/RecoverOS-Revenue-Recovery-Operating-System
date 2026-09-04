@@ -9,7 +9,7 @@ describe('Policy & Guardrail Engine (evaluatePolicy)', () => {
     const expiredCase = {
       failureCode: 'BANK_TIMEOUT',
       initialRevenueAtRisk: 5000,
-      createdAt: new Date(refTime.getTime() - 1000 * 60 * 60 * 49), // 49h ago
+      createdAt: new Date(refTime.getTime() - 1000 * 60 * 60 * 49),
       retryCount: 0,
       contactCount: 0
     };
@@ -40,7 +40,7 @@ describe('Policy & Guardrail Engine (evaluatePolicy)', () => {
       failureCode: 'INSUFFICIENT_FUNDS',
       initialRevenueAtRisk: 4000,
       createdAt: new Date(refTime.getTime() - 1000 * 60 * 60 * 4),
-      retryCount: 2, // Max allowed retries = 2
+      retryCount: 2,
       contactCount: 0
     };
 
@@ -56,7 +56,7 @@ describe('Policy & Guardrail Engine (evaluatePolicy)', () => {
       initialRevenueAtRisk: 3000,
       createdAt: new Date(refTime.getTime() - 1000 * 60 * 60 * 3),
       retryCount: 0,
-      contactCount: 2 // Max allowed customer contacts = 2
+      contactCount: 2
     };
 
     const res = evaluatePolicy(contactCeilingCase, RECOVERY_ACTIONS.SEND_PAYMENT_REMINDER, refTime);
@@ -113,8 +113,8 @@ describe('Policy & Guardrail Engine (evaluatePolicy)', () => {
 
   it('Strict Precedence Invariant: Hard prohibited + High Value MUST resolve to STOP (not ESCALATE)', () => {
     const conflictCase = {
-      failureCode: 'CARD_STOLEN', // Rule 2: Hard prohibited -> REJECT/STOP
-      initialRevenueAtRisk: 150000, // Rule 5: High value -> ESCALATE
+      failureCode: 'CARD_STOLEN',
+      initialRevenueAtRisk: 150000,
       createdAt: new Date(refTime.getTime() - 1000 * 60 * 60 * 2),
       retryCount: 0,
       contactCount: 0
@@ -126,3 +126,4 @@ describe('Policy & Guardrail Engine (evaluatePolicy)', () => {
     expect(res.finalAction).not.toBe(RECOVERY_ACTIONS.ESCALATE_TO_HUMAN);
   });
 });
+

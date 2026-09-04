@@ -1,25 +1,61 @@
-/**
- * Currency, date, and percentage formatters for RecoverOS
- */
+import { CURRENCIES } from '../context/CurrencyContext';
+
+function getActiveCurrencyConfig() {
+  try {
+    const saved = localStorage.getItem('recoveros_currency');
+    if (saved && CURRENCIES[saved]) return CURRENCIES[saved];
+  } catch {
+
+  }
+  return CURRENCIES.INR;
+}
 
 export function formatINR(amount = 0) {
   if (typeof amount !== 'number') amount = Number(amount) || 0;
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0
-  }).format(amount);
+  const config = getActiveCurrencyConfig();
+  const converted = amount * config.rate;
+
+  try {
+    return new Intl.NumberFormat(config.locale, {
+      style: 'currency',
+      currency: config.code,
+      maximumFractionDigits: config.decimals
+    }).format(converted);
+  } catch {
+    return `${config.symbol}${Math.round(converted).toLocaleString()}`;
+  }
 }
 
 export function formatShortINR(amount = 0) {
   if (typeof amount !== 'number') amount = Number(amount) || 0;
-  if (amount >= 100000) {
-    return `₹${(amount / 100000).toFixed(2)}L`;
+  const config = getActiveCurrencyConfig();
+  const converted = amount * config.rate;
+
+  if (config.code === 'INR') {
+    if (converted >= 100000) {
+      return `₹${(converted / 100000).toFixed(2)}L`;
+    }
+    if (converted >= 1000) {
+      return `₹${(converted / 1000).toFixed(1)}k`;
+    }
+    return `₹${converted.toLocaleString('en-IN')}`;
   }
-  if (amount >= 1000) {
-    return `₹${(amount / 1000).toFixed(1)}k`;
+
+  if (converted >= 1000000) {
+    return `${config.symbol}${(converted / 1000000).toFixed(2)}M`;
   }
-  return `₹${amount.toLocaleString('en-IN')}`;
+  if (converted >= 1000) {
+    return `${config.symbol}${(converted / 1000).toFixed(1)}k`;
+  }
+  return `${config.symbol}${Math.round(converted).toLocaleString()}`;
+}
+
+export function formatMoney(amount = 0) {
+  return formatINR(amount);
+}
+
+export function formatShortMoney(amount = 0) {
+  return formatShortINR(amount);
 }
 
 export function formatDate(dateString) {
@@ -48,3 +84,4 @@ export function formatTimeAgo(dateString) {
   if (elapsedHours < 24) return `${elapsedHours}h ago`;
   return `${Math.floor(elapsedHours / 24)}d ago`;
 }
+

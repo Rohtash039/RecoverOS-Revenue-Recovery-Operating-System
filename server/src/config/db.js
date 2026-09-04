@@ -16,3 +16,4 @@ export async function disconnectDB() {
   await mongoose.disconnect();
   console.log('[Database] Disconnected from MongoDB');
 }
+

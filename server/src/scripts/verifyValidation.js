@@ -14,7 +14,6 @@ async function runValidationVerification() {
   await connectDB();
   await generateSeedDataset();
 
-  // Create isolated express app
   const app = express();
   app.use(express.json());
   app.use('/api/recovery-cases', recoveryCaseRoutes);
@@ -31,18 +30,16 @@ async function runValidationVerification() {
 
   function assert(condition, message) {
     if (condition) {
-      console.log(`✅ PASS: ${message}`);
+      console.log(`PASS: ${message}`);
       passed++;
     } else {
-      console.error(`❌ FAIL: ${message}`);
+      console.error(`FAIL: ${message}`);
       failed++;
     }
   }
 
   try {
-    // -------------------------------------------------------------
-    // Test 1: Invalid action enum rejected with 400 and structured error details
-    // -------------------------------------------------------------
+
     const invalidActionRes = await fetch(`${baseUrl}/api/recovery-cases/RC-1001/action`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -60,9 +57,6 @@ async function runValidationVerification() {
       'Invalid action enum returns 400 VALIDATION_ERROR with structured details for field "action"'
     );
 
-    // -------------------------------------------------------------
-    // Test 2: Missing operatorId rejected with 400
-    // -------------------------------------------------------------
     const missingOpRes = await fetch(`${baseUrl}/api/recovery-cases/RC-1001/action`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -77,9 +71,6 @@ async function runValidationVerification() {
       'Missing operatorId returns 400 VALIDATION_ERROR for required field "operatorId"'
     );
 
-    // -------------------------------------------------------------
-    // Test 3: Empty / whitespace operatorId rejected with 400
-    // -------------------------------------------------------------
     const emptyOpRes = await fetch(`${baseUrl}/api/recovery-cases/RC-1001/action`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -95,9 +86,6 @@ async function runValidationVerification() {
       'Empty/whitespace operatorId returns 400 VALIDATION_ERROR'
     );
 
-    // -------------------------------------------------------------
-    // Test 4: Invalid batch speed enum rejected with 400
-    // -------------------------------------------------------------
     const invalidSpeedRes = await fetch(`${baseUrl}/api/simulation/batch-run`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -113,9 +101,6 @@ async function runValidationVerification() {
       'Invalid batch speed enum returns 400 VALIDATION_ERROR with structured details for field "speed"'
     );
 
-    // -------------------------------------------------------------
-    // Test 5: Valid batch speed enum passes validation
-    // -------------------------------------------------------------
     const validBatchRes = await fetch(`${baseUrl}/api/simulation/batch-run`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -129,7 +114,6 @@ async function runValidationVerification() {
       'Valid batch request body successfully passes schema validation'
     );
 
-    // Wait for the fast batch simulation to finish processing before proceeding
     const batchId = validBatchData.data?.batchId;
     if (batchId) {
       for (let i = 0; i < 40; i++) {
@@ -142,9 +126,6 @@ async function runValidationVerification() {
       }
     }
 
-    // -------------------------------------------------------------
-    // Test 6: Valid human action passes schema validation
-    // -------------------------------------------------------------
     const targetCase = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1003' });
     if (targetCase) {
       targetCase.state = 'ESCALATED';
@@ -167,7 +148,7 @@ async function runValidationVerification() {
     );
 
   } finally {
-    // Wait a brief tick to ensure any pending saves settle
+
     await new Promise(r => setTimeout(r, 200));
     await generateSeedDataset();
     await new Promise((resolve) => server.close(resolve));
@@ -176,3 +157,4 @@ async function runValidationVerification() {
 }
 
 runValidationVerification();
+

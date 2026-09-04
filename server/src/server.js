@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import { ENV } from './config/env.js';
 import { connectDB } from './config/db.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -15,23 +16,39 @@ import metricsRoutes from './routes/metricsRoutes.js';
 
 const app = express();
 
-// Security & Middleware
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+const allowedOrigins = (ENV.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map(url => url.trim().replace(/\/$/, ''));
+
 app.use(cors({
-  origin: ENV.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const cleanOrigin = origin.replace(/\/$/, '');
+    if (
+      allowedOrigins.includes(cleanOrigin) ||
+      allowedOrigins.includes('*') ||
+      ENV.NODE_ENV !== 'production'
+    ) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS policy violation: Origin '${origin}' not allowed.`));
+  },
   credentials: true
 }));
 app.use(express.json());
 app.use(requestLogger);
 app.use(globalLimiter);
 
-// API Routes
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/recovery-cases', recoveryCaseRoutes);
 app.use('/api/simulation', simulationRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/metrics', metricsRoutes);
 
-// Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'HEALTHY',
@@ -41,10 +58,8 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Centralized error handler
 app.use(errorHandler);
 
-// Start server
 async function startServer() {
   await connectDB();
   app.listen(ENV.PORT, '0.0.0.0', () => {
@@ -53,3 +68,4 @@ async function startServer() {
 }
 
 startServer();
+

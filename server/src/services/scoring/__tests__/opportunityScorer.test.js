@@ -11,7 +11,7 @@ describe('Opportunity Scorer (calculateROS)', () => {
         failureCode: code,
         amount: 5000,
         attempts: 0,
-        createdAt: new Date(refTime.getTime() - 1000 * 60 * 30) // 30m ago
+        createdAt: new Date(refTime.getTime() - 1000 * 60 * 30)
       };
       const customer = { previousSuccessfulPayments: 10, previousFailedPayments: 0 };
 
@@ -23,15 +23,15 @@ describe('Opportunity Scorer (calculateROS)', () => {
 
   it('should calculate high ROS for optimal high-reliability bank timeout scenario', () => {
     const txn = {
-      failureCode: 'BANK_TIMEOUT', // 95
-      amount: 5000, // 90
-      attempts: 0, // 100
-      createdAt: new Date(refTime.getTime() - 1000 * 60 * 30) // 30m ago => recency: 100
+      failureCode: 'BANK_TIMEOUT',
+      amount: 5000,
+      attempts: 0,
+      createdAt: new Date(refTime.getTime() - 1000 * 60 * 30)
     };
-    const customer = { previousSuccessfulPayments: 8, previousFailedPayments: 0 }; // 100
+    const customer = { previousSuccessfulPayments: 8, previousFailedPayments: 0 };
 
     const { recoveryScore, scoreFactors } = calculateROS(txn, customer, refTime);
-    // 0.30*95 + 0.25*100 + 0.15*100 + 0.15*90 + 0.15*100 = 28.5 + 25 + 15 + 13.5 + 15 = 97
+
     expect(recoveryScore).toBe(97);
     expect(scoreFactors.failureRecoverability).toBe(95);
     expect(scoreFactors.customerReliability).toBe(100);
@@ -100,3 +100,4 @@ describe('Opportunity Scorer (calculateROS)', () => {
     expect(attempt1.recoveryScore).toBeGreaterThan(attempt2.recoveryScore);
   });
 });
+

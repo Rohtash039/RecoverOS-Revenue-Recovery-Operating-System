@@ -1,10 +1,5 @@
 import { FAILURE_CODE_TO_DIAGNOSIS_CATEGORY, RECOVERY_ACTIONS } from '../../config/constants.js';
 
-/**
- * Deterministic Fallback Engine
- * Provides instant, zero-latency diagnosis and dunning recommendation
- * conforming strictly to the AIDiagnosisSchema when AI is unavailable or AI_MODE=deterministic.
- */
 export function getFallbackDiagnosis(transaction, customer) {
   const failureCode = transaction.failureCode;
   const normCategory = FAILURE_CODE_TO_DIAGNOSIS_CATEGORY[failureCode] || 'UNKNOWN';
@@ -115,3 +110,4 @@ export function getFallbackDiagnosis(transaction, customer) {
     fallbackUsed: true
   };
 }
+

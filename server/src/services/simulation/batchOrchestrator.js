@@ -10,11 +10,8 @@ import { invalidateAnalyticsCache } from '../analytics/analyticsService.js';
 let activeBatchAbortController = null;
 let activeBatchPromise = null;
 
-/**
- * Initiates or returns an active batch run for all cases.
- */
 export async function startBatchRun(speed = 'FAST') {
-  // Check if there is an existing running batch
+
   const existingBatch = await SimulationBatch.findOne({ status: 'RUNNING' });
   if (existingBatch) {
     return existingBatch;
@@ -22,7 +19,7 @@ export async function startBatchRun(speed = 'FAST') {
 
   const batchId = `BATCH-${Date.now()}`;
   const cases = await RecoveryCase.find({}).sort({ recoveryCaseId: 1 });
-  
+
   const batch = new SimulationBatch({
     batchId,
     status: 'RUNNING',
@@ -39,7 +36,6 @@ export async function startBatchRun(speed = 'FAST') {
   });
   await batch.save();
 
-  // Run in background / async with abort signal
   const delayMs = speed === 'ANIMATED' ? 80 : 5;
   activeBatchAbortController = new AbortController();
   const signal = activeBatchAbortController.signal;
@@ -49,9 +45,6 @@ export async function startBatchRun(speed = 'FAST') {
   return batch;
 }
 
-/**
- * Force aborts active in-memory batch process (simulates process crash / restart).
- */
 export function abortActiveBatch() {
   if (activeBatchAbortController) {
     activeBatchAbortController.abort();
@@ -60,11 +53,8 @@ export function abortActiveBatch() {
   activeBatchPromise = null;
 }
 
-/**
- * Resumes an interrupted or active batch run from its last saved case checkpoint.
- */
 export async function resumeBatchRun(batchId, speed = 'FAST') {
-  // Abort any existing in-memory running promise before resuming
+
   abortActiveBatch();
 
   let batch = null;
@@ -121,9 +111,6 @@ export async function resumeBatchRun(batchId, speed = 'FAST') {
   return batch;
 }
 
-/**
- * Internal execution loop processing cases sequentially with checkpoints.
- */
 async function runBatchLoop(batch, cases, startIndex, delayMs, signal) {
   try {
     const customers = await Customer.find({});
@@ -138,7 +125,6 @@ async function runBatchLoop(batch, cases, startIndex, delayMs, signal) {
 
       const rc = cases[i];
 
-      // Skip if already in terminal state
       if ([CASE_STATES.RECOVERED, CASE_STATES.STOPPED, CASE_STATES.EXPIRED].includes(rc.state)) {
         batch.processedCases++;
         if (rc.state === CASE_STATES.RECOVERED) {
@@ -203,12 +189,10 @@ async function runBatchLoop(batch, cases, startIndex, delayMs, signal) {
   }
 }
 
-/**
- * Gets batch status by ID
- */
 export async function getBatchStatus(batchId) {
   if (!batchId) {
     return await SimulationBatch.findOne().sort({ startedAt: -1 });
   }
   return await SimulationBatch.findOne({ batchId });
 }
+

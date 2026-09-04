@@ -36,14 +36,10 @@ function resolveCustomerMessage(rc) {
 }
 
 async function runCustomerMessageTest() {
-  console.log('====================================================================');
-  console.log('      RECOVEROS — CUSTOMER MESSAGE STATE INTEGRITY TEST             ');
-  console.log('====================================================================\n');
-
+  
   await connectDB();
   await generateSeedDataset();
 
-  // 1. Process TXN-8003 up to ESCALATED state
   console.log('>>> [1. TESTING TXN-8003 IN ESCALATED PRE-APPROVAL STATE]');
   const caseHv = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1003' });
   const custHv = await Customer.findOne({ customerId: caseHv.customerId });
@@ -58,7 +54,6 @@ async function runCustomerMessageTest() {
   console.log(`- Body: ${preApprovalMsg.body}`);
   console.log(`- CTA: ${preApprovalMsg.cta}`);
 
-  // Assertions for pre-approval state
   const containsScheduledRetry = (
     preApprovalMsg.body.toLowerCase().includes('scheduled for automatic retry') ||
     preApprovalMsg.body.toLowerCase().includes('will automatically retry') ||
@@ -71,7 +66,6 @@ async function runCustomerMessageTest() {
 
   const preApprovalPass = !containsScheduledRetry && containsNeutralReview && escalatedCase.state === CASE_STATES.ESCALATED;
 
-  // 2. Process TXN-8003 post human approval -> RECOVERED
   console.log('\n>>> [2. TESTING TXN-8003 IN RECOVERED POST-APPROVAL STATE]');
   const approvedCase = await handleHumanAction(escalatedCase, txnHv, 'APPROVE_ESCALATION');
   const postApprovalMsg = resolveCustomerMessage(approvedCase);
@@ -90,10 +84,9 @@ async function runCustomerMessageTest() {
   await generateSeedDataset();
   await disconnectDB();
 
-  console.log('\n====================================================================');
-  console.log(`PRE-APPROVAL CHECK:  ${preApprovalPass ? '✅ PASS' : '❌ FAIL'}`);
-  console.log(`POST-APPROVAL CHECK: ${postApprovalPass ? '✅ PASS' : '❌ FAIL'}`);
-  console.log('====================================================================\n');
+  console.log(`PRE-APPROVAL CHECK:  ${preApprovalPass ? 'PASS' : 'FAIL'}`);
+  console.log(`POST-APPROVAL CHECK: ${postApprovalPass ? 'PASS' : 'FAIL'}`);
 }
 
 runCustomerMessageTest();
+

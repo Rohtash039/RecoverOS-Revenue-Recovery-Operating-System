@@ -8,22 +8,16 @@ import { recordAuditLog } from '../audit/auditService.js';
 import { validateStateTransition } from './stateMachine.js';
 import { invalidateAnalyticsCache } from '../analytics/analyticsService.js';
 
-/**
- * Executes the complete bounded recovery lifecycle for a single case.
- * Runs through scoring, AI diagnosis, policy check, and bounded execution loop.
- */
 export async function processCaseWorkflow(recoveryCase, customer, transaction) {
   const caseId = recoveryCase.recoveryCaseId;
   const txnId = transaction?.transactionId || recoveryCase.transactionId;
 
-  // 1. SCORING
   validateStateTransition(recoveryCase.state, CASE_STATES.SCORING);
   recoveryCase.state = CASE_STATES.SCORING;
   const { recoveryScore, scoreFactors } = calculateROS(transaction, customer);
   recoveryCase.recoveryScore = recoveryScore;
   recoveryCase.scoreFactors = scoreFactors;
 
-  // Deterministic estimated recovery calculation
   const probMultiplier = HARD_PROHIBITED_CODES.includes(transaction.failureCode) ? 0 : 0.85;
   const estimatedProb = (recoveryScore / 100) * probMultiplier;
   recoveryCase.expectedRecovery = Math.round(recoveryCase.initialRevenueAtRisk * estimatedProb);
@@ -39,13 +33,12 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
     payload: { scoreFactors, recoveryScore, expectedRecovery: recoveryCase.expectedRecovery }
   });
 
-  // 2. ANALYZING (AI / Fallback)
   validateStateTransition(recoveryCase.state, CASE_STATES.ANALYZING);
   recoveryCase.state = CASE_STATES.ANALYZING;
-  
+
   const diagnosis = await diagnoseRecoveryCase(transaction, customer, recoveryScore);
   recoveryCase.aiDiagnosis = diagnosis;
-  
+
   await recordAuditLog({
     recoveryCaseId: caseId,
     transactionId: txnId,
@@ -60,7 +53,6 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
 
   recoveryCase.state = CASE_STATES.ACTION_PLANNED;
 
-  // 3. POLICY CHECK
   validateStateTransition(recoveryCase.state, CASE_STATES.POLICY_CHECK);
   recoveryCase.state = CASE_STATES.POLICY_CHECK;
   const policyResult = evaluatePolicy(
@@ -79,7 +71,6 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
     payload: policyResult
   });
 
-  // Handle Policy Decision
   if (policyResult.decision === 'REJECT') {
     validateStateTransition(recoveryCase.state, CASE_STATES.STOPPED);
     recoveryCase.state = CASE_STATES.STOPPED;
@@ -124,7 +115,6 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
     return recoveryCase;
   }
 
-  // 4. BOUNDED EXECUTION LOOP (Max 2 Attempts)
   let currentAction = policyResult.finalAction;
 
   while (
@@ -150,7 +140,6 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
 
     recoveryCase.state = CASE_STATES.OBSERVING;
 
-    // Idempotent execution wrapper
     const { outcome } = await executeWithIdempotency({
       recoveryCaseId: caseId,
       transactionId: txnId,
@@ -210,7 +199,6 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
         financialImpact: 0
       });
 
-      // Bounded retry ceiling check
       if (recoveryCase.retryCount >= POLICY_CONFIG.MAX_PAYMENT_RETRIES) {
         validateStateTransition(recoveryCase.state, CASE_STATES.STOPPED);
         recoveryCase.state = CASE_STATES.STOPPED;
@@ -227,7 +215,7 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
           stateAfter: CASE_STATES.STOPPED
         });
       } else {
-        // Attempt 2 adaptive action switch if appropriate
+
         if (currentAction === RECOVERY_ACTIONS.RETRY_PAYMENT && transaction.failureCode === 'INSUFFICIENT_FUNDS') {
           currentAction = RECOVERY_ACTIONS.SUGGEST_ALTERNATE_PAYMENT;
         }
@@ -241,16 +229,13 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
   return recoveryCase;
 }
 
-/**
- * Handles explicit Human Actions on ESCALATED cases
- */
-export async function handleHumanAction(recoveryCase, transaction, actionType, operatorId = 'ops_lead_default') {
+export async function handleHumanAction(recoveryCase, transaction, actionType, operatorId = 'ops_lead_priya') {
   const caseId = recoveryCase.recoveryCaseId;
   const txnId = transaction?.transactionId || recoveryCase.transactionId;
 
   if (recoveryCase.state !== CASE_STATES.ESCALATED) {
     if ([CASE_STATES.EXECUTING, CASE_STATES.OBSERVING, CASE_STATES.RECOVERED, CASE_STATES.STOPPED].includes(recoveryCase.state)) {
-      // Idempotent return for in-flight or already resolved human action
+
       return recoveryCase;
     }
     const error = new Error(`Cannot perform human action on case in state '${recoveryCase.state}'. Case must be 'ESCALATED'.`);
@@ -288,7 +273,6 @@ export async function handleHumanAction(recoveryCase, transaction, actionType, o
     const actionToExecute = recoveryCase.pendingHumanAction || RECOVERY_ACTIONS.RETRY_PAYMENT;
     const attemptNumber = (recoveryCase.retryCount || 0) + 1;
 
-    // 1. Log Human Approval Granted (Actor: HUMAN) with operatorId attribution
     await recordAuditLog({
       recoveryCaseId: caseId,
       transactionId: txnId,
@@ -301,7 +285,6 @@ export async function handleHumanAction(recoveryCase, transaction, actionType, o
       payload: { operatorId, pendingHumanAction: actionToExecute }
     });
 
-    // 2. Transition to OBSERVING and log ACTION_EXECUTED (Actor: SYSTEM) BEFORE simulator execution
     recoveryCase.state = CASE_STATES.OBSERVING;
 
     await recordAuditLog({
@@ -314,7 +297,7 @@ export async function handleHumanAction(recoveryCase, transaction, actionType, o
       stateBefore: CASE_STATES.EXECUTING,
       stateAfter: CASE_STATES.OBSERVING,
       financialImpact: 0,
-      payload: { attemptNumber }
+      payload: { attemptNumber, operatorId }
     });
 
     const workflowStep = `HUMAN_APPROVED_ATTEMPT_${attemptNumber}`;
@@ -325,6 +308,7 @@ export async function handleHumanAction(recoveryCase, transaction, actionType, o
       workflowStep,
       actionType: actionToExecute,
       attemptNumber,
+      operatorId,
       executeFn: async () => {
         return simulateExecutionOutcome(
           {
@@ -387,3 +371,4 @@ export async function handleHumanAction(recoveryCase, transaction, actionType, o
   error.statusCode = 400;
   throw error;
 }
+

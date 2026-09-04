@@ -15,3 +15,4 @@ export const AIDiagnosisSchema = z.object({
     cta: z.string().min(0).max(50)
   })
 });
+

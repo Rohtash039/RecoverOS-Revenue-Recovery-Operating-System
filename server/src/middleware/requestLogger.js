@@ -1,4 +1,4 @@
-// In-memory metrics storage
+
 export const metricsStore = {
   totalRequests: 0,
   successfulRequests: 0,
@@ -10,9 +10,6 @@ export const metricsStore = {
   startTime: Date.now()
 };
 
-/**
- * Structured JSON request logging middleware with lightweight telemetry tracking.
- */
 export function requestLogger(req, res, next) {
   const start = process.hrtime.bigint();
 
@@ -24,7 +21,6 @@ export function requestLogger(req, res, next) {
     const statusCode = res.statusCode;
     const method = req.method;
 
-    // Update in-memory metrics
     metricsStore.totalRequests++;
     metricsStore.totalLatencyMs += durationMs;
     metricsStore.requestsByMethod[method] = (metricsStore.requestsByMethod[method] || 0) + 1;
@@ -37,7 +33,6 @@ export function requestLogger(req, res, next) {
       metricsStore.successfulRequests++;
     }
 
-    // Skip verbose logging for health/metrics in test unless NODE_ENV=development
     if (req.path !== '/api/health' && req.path !== '/api/metrics') {
       const logEntry = {
         level: statusCode >= 500 ? 'error' : (statusCode >= 400 ? 'warn' : 'info'),
@@ -56,3 +51,4 @@ export function requestLogger(req, res, next) {
 
   next();
 }
+

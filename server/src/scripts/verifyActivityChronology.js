@@ -50,21 +50,16 @@ async function getActivityStreamMock(limit = 50) {
 }
 
 async function runChronologyVerification() {
-  console.log('====================================================================');
-  console.log('       RECOVEROS — ACTIVITY STREAM CHRONOLOGY VERIFICATION          ');
-  console.log('====================================================================\n');
-
+  
   await connectDB();
   await generateSeedDataset();
 
-  // 1. Process TXN-8093 (Hard Prohibited Fraud)
   console.log('>>> [1. EXECUTING TXN-8093 (FRAUD_SUSPECTED)]');
   const fraudCase = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1093' });
   const fraudCust = await Customer.findOne({ customerId: fraudCase.customerId });
   const fraudTxn = await Transaction.findOne({ transactionId: fraudCase.transactionId });
   await processCaseWorkflow(fraudCase, fraudCust, fraudTxn);
 
-  // 2. Process TXN-8003 (High Value & Human Approval)
   console.log('>>> [2. EXECUTING TXN-8003 (HIGH-VALUE & HUMAN APPROVAL)]');
   const hvCase = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1003' });
   const hvCust = await Customer.findOne({ customerId: hvCase.customerId });
@@ -74,7 +69,6 @@ async function runChronologyVerification() {
   const escalatedHv = await RecoveryCase.findOne({ recoveryCaseId: 'RC-1003' });
   await handleHumanAction(escalatedHv, hvTxn, 'APPROVE_ESCALATION');
 
-  // 3. Query Activity Stream
   console.log('\n>>> [3. INSPECTING ACTIVITY STREAM OUTPUT]');
   const stream = await getActivityStreamMock(20);
 
@@ -84,7 +78,6 @@ async function runChronologyVerification() {
     console.log(`[${timeStr}] [${item.actor.padEnd(13)}] ${item.transactionId} -> ${item.event} (${item.reason?.substring(0, 50) || '—'})`);
   }
 
-  // Verify TXN-8003 sequence in stream
   const hvEvents = stream.filter(s => s.transactionId === 'TXN-8003').map(s => s.event);
   console.log(`\n- TXN-8003 Sequence in Activity Stream: ${hvEvents.join(' -> ')}`);
 
@@ -104,9 +97,8 @@ async function runChronologyVerification() {
     }
     hvIndex = foundIdx;
   }
-  console.log(`- TXN-8003 Chronological Ordering: ${hvMatch ? '✅ PASS' : '❌ FAIL'}`);
+  console.log(`- TXN-8003 Chronological Ordering: ${hvMatch ? ' PASS' : ' FAIL'}`);
 
-  // Verify TXN-8093 sequence in stream
   const fraudEvents = stream.filter(s => s.transactionId === 'TXN-8093').map(s => s.event);
   console.log(`- TXN-8093 Sequence in Activity Stream: ${fraudEvents.join(' -> ')}`);
 
@@ -126,14 +118,12 @@ async function runChronologyVerification() {
     }
     fraudIndex = foundIdx;
   }
-  console.log(`- TXN-8093 Chronological Ordering: ${fraudMatch ? '✅ PASS' : '❌ FAIL'}`);
+  console.log(`- TXN-8093 Chronological Ordering: ${fraudMatch ? ' PASS' : 'FAIL'}`);
 
   await generateSeedDataset();
   await disconnectDB();
 
-  console.log('\n====================================================================');
-  console.log(`OVERALL CHRONOLOGY RESULT: ${hvMatch && fraudMatch ? '✅ PASS' : '❌ FAIL'}`);
-  console.log('====================================================================\n');
 }
 
 runChronologyVerification();
+

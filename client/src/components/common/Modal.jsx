@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { X } from 'lucide-react';
 
 export function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-3xl' }) {
@@ -20,12 +20,12 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-3xl'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/40 dark:bg-black/70 animate-fade-in">
-      <div 
-        className="fixed inset-0" 
+      <div
+        className="fixed inset-0"
         onClick={onClose}
       />
       <div className={`relative w-full ${maxWidth} bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh] z-10 text-neutral-900 dark:text-neutral-100`}>
-        {/* Header */}
+
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-[#171717] shrink-0">
           <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
             {title}
@@ -38,7 +38,6 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-3xl'
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-5 overflow-y-auto space-y-4">
           {children}
         </div>
@@ -46,3 +45,4 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-3xl'
     </div>
   );
 }
+

@@ -11,10 +11,6 @@ export function invalidateAnalyticsCache() {
   lastCacheTime = 0;
 }
 
-/**
- * Calculates authoritative financial analytics dynamically from raw MongoDB records.
- * Uses 5-second in-memory caching with automatic invalidation on mutating recovery actions.
- */
 export async function getDashboardAnalytics(forceRefresh = false) {
   const now = Date.now();
   if (!forceRefresh && cachedAnalytics && (now - lastCacheTime < CACHE_TTL_MS)) {
@@ -77,7 +73,6 @@ export async function getDashboardAnalytics(forceRefresh = false) {
       categoryMap[cat].recoveredCount++;
     }
 
-    // Funnel counts
     if (c.state !== CASE_STATES.AT_RISK && c.state !== CASE_STATES.SCORING) {
       analyzedCount++;
     }
@@ -90,12 +85,12 @@ export async function getDashboardAnalytics(forceRefresh = false) {
   }
 
   const remainingRevenueAtRisk = Math.max(0, initialRevenueAtRisk - recoveredRevenue);
-  const recoveryRate = initialRevenueAtRisk > 0 
-    ? Number(((recoveredRevenue / initialRevenueAtRisk) * 100).toFixed(2)) 
+  const recoveryRate = initialRevenueAtRisk > 0
+    ? Number(((recoveredRevenue / initialRevenueAtRisk) * 100).toFixed(2))
     : 0;
 
-  const expectedRecoveryAttainment = expectedRecovery > 0 
-    ? Number(((recoveredRevenue / expectedRecovery) * 100).toFixed(2)) 
+  const expectedRecoveryAttainment = expectedRecovery > 0
+    ? Number(((recoveredRevenue / expectedRecovery) * 100).toFixed(2))
     : 0;
 
   const terminalStates = [CASE_STATES.RECOVERED, CASE_STATES.STOPPED, CASE_STATES.EXPIRED];
@@ -113,8 +108,8 @@ export async function getDashboardAnalytics(forceRefresh = false) {
     }))
     .sort((a, b) => b.initialAtRisk - a.initialAtRisk);
 
-  const interventionEfficiency = executedCount > 0 
-    ? Number(((recoveredCount / executedCount) * 100).toFixed(2)) 
+  const interventionEfficiency = executedCount > 0
+    ? Number(((recoveredCount / executedCount) * 100).toFixed(2))
     : 0;
 
   const result = {
@@ -149,3 +144,4 @@ export async function getDashboardAnalytics(forceRefresh = false) {
   lastCacheTime = Date.now();
   return result;
 }
+

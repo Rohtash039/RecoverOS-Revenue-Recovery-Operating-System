@@ -34,29 +34,23 @@ async function runMetricsVerification() {
 
   function assert(condition, message) {
     if (condition) {
-      console.log(`✅ PASS: ${message}`);
+      console.log(`PASS: ${message}`);
       passed++;
     } else {
-      console.error(`❌ FAIL: ${message}`);
+      console.error(`FAIL: ${message}`);
       failed++;
     }
   }
 
   try {
-    // -------------------------------------------------------------
-    // Step 1: Send series of requests across multiple routes
-    // -------------------------------------------------------------
+
     await fetch(`${baseUrl}/api/dashboard/summary`);
     await fetch(`${baseUrl}/api/recovery-cases`);
     await fetch(`${baseUrl}/api/recovery-cases/RC-1001`);
-    await fetch(`${baseUrl}/api/recovery-cases/NON_EXISTENT_CASE_404`); // intentional 404
+    await fetch(`${baseUrl}/api/recovery-cases/NON_EXISTENT_CASE_404`);
 
-    // Wait a brief tick for finish handlers to update in-memory telemetry
     await new Promise(r => setTimeout(r, 100));
 
-    // -------------------------------------------------------------
-    // Step 2: Fetch and verify telemetry counters from /api/metrics
-    // -------------------------------------------------------------
     const metricsRes = await fetch(`${baseUrl}/api/metrics`);
     const metricsData = await metricsRes.json();
 
@@ -101,3 +95,4 @@ async function runMetricsVerification() {
 }
 
 runMetricsVerification();
+

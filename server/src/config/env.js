@@ -5,10 +5,12 @@ export const ENV = {
   PORT: process.env.PORT || 5000,
   NODE_ENV: process.env.NODE_ENV || 'development',
   MONGO_URI: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/recoveros',
-  GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+  GROK_API_KEY: process.env.GROK_API_KEY || process.env.XAI_API_KEY || '',
+  GROK_MODEL: process.env.GROK_MODEL || 'grok-2-latest',
   CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:5173',
   AI_TIMEOUT_MS: parseInt(process.env.AI_TIMEOUT_MS || '3500', 10),
-  AI_MODE: process.env.AI_MODE || 'deterministic', // 'live' | 'deterministic'
+  AI_MODE: process.env.AI_MODE || 'deterministic',
   SIMULATION_SEED: process.env.SIMULATION_SEED || 'RECOVEROS_BUILDATHON_2026',
   API_KEY: process.env.API_KEY || ''
 };
+

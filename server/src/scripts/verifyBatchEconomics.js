@@ -9,11 +9,10 @@ import { generateSeedDataset } from '../services/simulation/seedDataGenerator.js
 import { startBatchRun, getBatchStatus } from '../services/simulation/batchOrchestrator.js';
 import { getDashboardAnalytics } from '../services/analytics/analyticsService.js';
 import { handleHumanAction } from '../services/workflow/workflowEngine.js';
-import { 
-  CASE_STATES, 
-  HARD_PROHIBITED_CODES, 
-  POLICY_CONFIG, 
-  AUDIT_ACTORS 
+import {
+  CASE_STATES,
+  HARD_PROHIBITED_CODES,
+  POLICY_CONFIG,
 } from '../config/constants.js';
 
 async function waitBatch(batchId) {
@@ -27,15 +26,8 @@ async function waitBatch(batchId) {
 }
 
 async function runBatchAudit() {
-  console.log('====================================================================');
-  console.log('       RECOVEROS — P0 BATCH ECONOMICS & DASHBOARD AUDIT             ');
-  console.log('====================================================================\n');
-
   await connectDB();
 
-  // -------------------------------------------------------------------------
-  // 1. CLEAN RESET AUDIT
-  // -------------------------------------------------------------------------
   console.log('>>> [1. CLEAN RESET BASELINE AUDIT]');
   await generateSeedDataset();
 
@@ -71,11 +63,8 @@ async function runBatchAudit() {
     baselineActions === 0 &&
     baselineBatches === 0
   );
-  console.log(`Clean Reset Baseline Result: ${resetPass ? '✅ PASS' : '❌ FAIL'}\n`);
+  console.log(`Clean Reset Baseline Result: ${resetPass ? ' PASS' : 'FAIL'}\n`);
 
-  // -------------------------------------------------------------------------
-  // 2. REAL 100-CASE BATCH EXECUTION & PROGRESS AUDIT
-  // -------------------------------------------------------------------------
   console.log('>>> [2. REAL 100-CASE BATCH RUN]');
   const batchLaunch = await startBatchRun('FAST');
   console.log(`- Batch Launched with ID: ${batchLaunch.batchId}`);
@@ -88,9 +77,6 @@ async function runBatchAudit() {
   console.log(`- Batch Reported Stopped Cases: ${batchFinal.stoppedCases}`);
   console.log(`- Batch Reported Recovered Amount: ₹${batchFinal.recoveredAmount.toLocaleString('en-IN')}`);
 
-  // -------------------------------------------------------------------------
-  // 3. FINAL BATCH STATE & NON-INTERMEDIATE STATE AUDIT
-  // -------------------------------------------------------------------------
   console.log('\n>>> [3. FINAL CASE STATE INTEGRITY AUDIT]');
   const postBatchCases = await RecoveryCase.find({});
   const invalidIntermediateStates = postBatchCases.filter(c => [
@@ -114,11 +100,8 @@ async function runBatchAudit() {
   console.log(`- Cases in Invalid Intermediate States: ${invalidIntermediateStates.length} (Expected: 0)`);
 
   const statesPass = invalidIntermediateStates.length === 0 && (countRecovered + countEscalated + countStopped + countExpired === 100);
-  console.log(`State Integrity Result: ${statesPass ? '✅ PASS' : '❌ FAIL'}\n`);
+  console.log(`State Integrity Result: ${statesPass ? 'PASS' : 'FAIL'}\n`);
 
-  // -------------------------------------------------------------------------
-  // 4. FINANCIAL ATTRIBUTION & ANALYTICS AUDIT
-  // -------------------------------------------------------------------------
   console.log('>>> [4. DYNAMIC FINANCIAL ATTRIBUTION AUDIT]');
   const analytics = await getDashboardAnalytics();
 
@@ -135,11 +118,8 @@ async function runBatchAudit() {
     analytics.recoveredRevenue <= analytics.initialRevenueAtRisk &&
     analytics.recoveryRate === Number(((analytics.recoveredRevenue / analytics.initialRevenueAtRisk) * 100).toFixed(2))
   );
-  console.log(`Financial Attribution Math: ${mathCheckPass ? '✅ PASS' : '❌ FAIL'}\n`);
+  console.log(`Financial Attribution Math: ${mathCheckPass ? 'PASS' : 'FAIL'}\n`);
 
-  // -------------------------------------------------------------------------
-  // 5. FRAUD & HARD-PROHIBITED ACCOUNTING AUDIT
-  // -------------------------------------------------------------------------
   console.log('>>> [5. FRAUD & HARD-PROHIBITED ACCOUNTING AUDIT]');
   const hardTxns = await Transaction.find({ failureCode: { $in: HARD_PROHIBITED_CODES } });
   const hardTxnIds = hardTxns.map(t => t.transactionId);
@@ -161,11 +141,8 @@ async function runBatchAudit() {
   console.log(`- Hard-Prohibited Cases in Non-STOPPED State: ${hardStateFailures} (Expected: 0)`);
 
   const fraudAccountingPass = hardScoreFailures === 0 && hardRecoveredFailures === 0 && hardStateFailures === 0;
-  console.log(`Fraud Accounting Result: ${fraudAccountingPass ? '✅ PASS' : '❌ FAIL'}\n`);
+  console.log(`Fraud Accounting Result: ${fraudAccountingPass ? 'PASS' : 'FAIL'}\n`);
 
-  // -------------------------------------------------------------------------
-  // 6. HIGH-VALUE ESCALATION ACCOUNTING AUDIT
-  // -------------------------------------------------------------------------
   console.log('>>> [6. HIGH-VALUE ESCALATION ACCOUNTING AUDIT]');
   const highValueCases = postBatchCases.filter(c => c.initialRevenueAtRisk >= POLICY_CONFIG.HIGH_VALUE_THRESHOLD);
   console.log(`- Total High-Value Cases (>= ₹50,000): ${highValueCases.length}`);
@@ -182,11 +159,8 @@ async function runBatchAudit() {
   console.log(`- High-Value Cases in ESCALATED State: ${hvInEscalated} (Expected: 4)`);
 
   const highValuePass = hvAutoRecovered === 0 && hvInEscalated === highValueCases.length;
-  console.log(`High-Value Escalation Accounting Result: ${highValuePass ? '✅ PASS' : '❌ FAIL'}\n`);
+  console.log(`High-Value Escalation Accounting Result: ${highValuePass ? ' PASS' : ' FAIL'}\n`);
 
-  // -------------------------------------------------------------------------
-  // 7. RETRY EXECUTION ACCOUNTING AUDIT
-  // -------------------------------------------------------------------------
   console.log('>>> [7. RETRY EXECUTION ACCOUNTING AUDIT]');
   const retryActions = await RecoveryAction.find({ attemptNumber: 2 });
   const retryCases = await RecoveryCase.find({ retryCount: { $gte: 2 } });
@@ -197,11 +171,8 @@ async function runBatchAudit() {
   console.log(`- Cases that Exceeded Max Retry Limit (>2): ${overLimitCases.length} (Expected: 0)`);
 
   const retryPass = retryActions.length > 0 && overLimitCases.length === 0;
-  console.log(`Retry Accounting Result: ${retryPass ? '✅ PASS' : '❌ FAIL'}\n`);
+  console.log(`Retry Accounting Result: ${retryPass ? 'PASS' : ' FAIL'}\n`);
 
-  // -------------------------------------------------------------------------
-  // 8. AUDIT LOG COMPLETENESS & CHAIN VERIFICATION
-  // -------------------------------------------------------------------------
   console.log('>>> [8. AUDIT COMPLETENESS VERIFICATION]');
   const totalLogs = await AuditLog.countDocuments({});
   const normalCase = await RecoveryCase.findOne({ state: CASE_STATES.RECOVERED });
@@ -214,13 +185,10 @@ async function runBatchAudit() {
   console.log(`- Hard Stop Chain (${stoppedCase.recoveryCaseId}): ${stoppedLogs.map(l => l.event).join(' -> ')}`);
 
   const auditPass = totalLogs >= 400 && normalLogs.length >= 5 && stoppedLogs.length >= 4;
-  console.log(`Audit Completeness Result: ${auditPass ? '✅ PASS' : '❌ FAIL'}\n`);
+  console.log(`Audit Completeness Result: ${auditPass ? 'PASS' : 'FAIL'}\n`);
 
-  // -------------------------------------------------------------------------
-  // 9. RESET -> RUN -> RESET -> RUN REPEATABILITY AUDIT
-  // -------------------------------------------------------------------------
   console.log('>>> [9. RESET -> RUN -> RESET -> RUN REPEATABILITY AUDIT]');
-  // Run 1 Metrics are stored in `analytics`
+
   await generateSeedDataset();
   const run2Launch = await startBatchRun('FAST');
   await waitBatch(run2Launch.batchId);
@@ -248,15 +216,12 @@ async function runBatchAudit() {
     analytics.casesByState[CASE_STATES.STOPPED] === analyticsRun2.casesByState[CASE_STATES.STOPPED] &&
     caseMismatches === 0
   );
-  console.log(`Repeatability Result: ${repeatabilityPass ? '✅ PASS' : '❌ FAIL'}\n`);
+  console.log(`Repeatability Result: ${repeatabilityPass ? 'PASS' : 'FAIL'}\n`);
 
-  // Restore clean state for demo
   await generateSeedDataset();
   await disconnectDB();
 
-  console.log('====================================================================');
-  console.log('          P0 BATCH ECONOMICS AUDIT COMPLETE                         ');
-  console.log('====================================================================\n');
 }
 
 runBatchAudit();
+

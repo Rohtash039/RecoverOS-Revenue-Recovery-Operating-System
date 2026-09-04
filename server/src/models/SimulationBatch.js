@@ -17,3 +17,4 @@ const simulationBatchSchema = new mongoose.Schema({
 });
 
 export const SimulationBatch = mongoose.model('SimulationBatch', simulationBatchSchema);
+

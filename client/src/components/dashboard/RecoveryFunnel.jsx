@@ -1,5 +1,3 @@
-import React from 'react';
-import { ArrowRight, ShieldCheck, CheckCircle, Activity, PlayCircle, AlertCircle } from 'lucide-react';
 
 export function RecoveryFunnel({ funnel = {} }) {
   const steps = [
@@ -36,3 +34,4 @@ export function RecoveryFunnel({ funnel = {} }) {
     </div>
   );
 }
+

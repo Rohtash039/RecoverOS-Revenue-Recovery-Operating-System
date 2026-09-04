@@ -5,8 +5,8 @@ const router = express.Router();
 
 router.get('/', (req, res) => {
   const uptimeSeconds = Math.floor((Date.now() - metricsStore.startTime) / 1000);
-  const avgLatencyMs = metricsStore.totalRequests > 0 
-    ? Number((metricsStore.totalLatencyMs / metricsStore.totalRequests).toFixed(2)) 
+  const avgLatencyMs = metricsStore.totalRequests > 0
+    ? Number((metricsStore.totalLatencyMs / metricsStore.totalRequests).toFixed(2))
     : 0;
 
   const errorRatePercent = metricsStore.totalRequests > 0
@@ -38,3 +38,4 @@ router.get('/', (req, res) => {
 });
 
 export default router;
+

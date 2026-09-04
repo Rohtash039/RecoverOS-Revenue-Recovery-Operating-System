@@ -1,4 +1,3 @@
-import React from 'react';
 import { STATE_COLORS, ACTOR_COLORS } from '../../utils/constants';
 
 export function StateBadge({ state, isBlocked = false }) {
@@ -10,11 +9,11 @@ export function StateBadge({ state, isBlocked = false }) {
     );
   }
 
-  const conf = STATE_COLORS[state] || { 
-    bg: 'bg-neutral-100 dark:bg-neutral-800', 
-    text: 'text-neutral-700 dark:text-neutral-300', 
-    border: 'border-neutral-200 dark:border-neutral-700', 
-    label: state 
+  const conf = STATE_COLORS[state] || {
+    bg: 'bg-neutral-100 dark:bg-neutral-800',
+    text: 'text-neutral-700 dark:text-neutral-300',
+    border: 'border-neutral-200 dark:border-neutral-700',
+    label: state
   };
 
   return (
@@ -25,10 +24,10 @@ export function StateBadge({ state, isBlocked = false }) {
 }
 
 export function ActorBadge({ actor }) {
-  const conf = ACTOR_COLORS[actor] || { 
-    bg: 'bg-neutral-100 dark:bg-neutral-800', 
-    text: 'text-neutral-700 dark:text-neutral-300', 
-    border: 'border-neutral-200 dark:border-neutral-700' 
+  const conf = ACTOR_COLORS[actor] || {
+    bg: 'bg-neutral-100 dark:bg-neutral-800',
+    text: 'text-neutral-700 dark:text-neutral-300',
+    border: 'border-neutral-200 dark:border-neutral-700'
   };
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-mono font-medium border ${conf.bg} ${conf.text} ${conf.border}`}>
@@ -58,3 +57,13 @@ export function DecisionBadge({ decision }) {
     </span>
   );
 }
+
+export function InvoiceBadge({ invoiceNumber, daysOverdue }) {
+  return (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 shadow-xs">
+      <span className="font-semibold">B2B INVOICE</span>
+      {daysOverdue !== undefined && <span>• {daysOverdue}d overdue</span>}
+    </span>
+  );
+}
+

@@ -60,7 +60,6 @@ describe('Idempotency Service (executeWithIdempotency)', () => {
       executeFn: executeSpy
     });
 
-    // Key assertions: executeFn MUST NEVER be invoked for a duplicate request
     expect(executeSpy).not.toHaveBeenCalled();
     expect(result.idempotent).toBe(true);
     expect(result.outcome.result).toBe('SUCCESS');
@@ -73,3 +72,4 @@ describe('Idempotency Service (executeWithIdempotency)', () => {
     );
   });
 });
+

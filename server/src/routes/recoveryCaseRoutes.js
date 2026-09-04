@@ -1,10 +1,10 @@
 import express from 'express';
-import { 
-  getRecoveryCases, 
-  getRecoveryCaseById, 
-  getWhyNotRetryExplanation, 
-  postCaseAction, 
-  analyzeCase 
+import {
+  getRecoveryCases,
+  getRecoveryCaseById,
+  getWhyNotRetryExplanation,
+  postCaseAction,
+  analyzeCase
 } from '../controllers/recoveryCaseController.js';
 import { apiKeyAuth } from '../middleware/apiKeyAuth.js';
 import { validateBody } from '../middleware/validateBody.js';
@@ -19,3 +19,4 @@ router.post('/:id/action', apiKeyAuth, validateBody(caseActionSchema), postCaseA
 router.post('/:id/analyze', apiKeyAuth, analyzeCase);
 
 export default router;
+

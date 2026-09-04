@@ -4,14 +4,14 @@ import { RAW_FAILURE_CODES } from '../config/constants.js';
 const transactionSchema = new mongoose.Schema({
   transactionId: { type: String, required: true, unique: true, index: true },
   customerId: { type: String, required: true, index: true },
-  amount: { type: Number, required: true }, // In INR
+  amount: { type: Number, required: true },
   currency: { type: String, default: 'INR' },
   eventType: { type: String, enum: ['FAILED_PAYMENT', 'CHECKOUT_ABANDONED', 'INVOICE_OVERDUE'], required: true },
   paymentMethod: { type: String, enum: ['CARD', 'UPI', 'NETBANKING', 'WALLET', 'BANK_TRANSFER'] },
-  failureCode: { 
-    type: String, 
+  failureCode: {
+    type: String,
     enum: RAW_FAILURE_CODES,
-    required: true 
+    required: true
   },
   failureReason: { type: String, required: true },
   attempts: { type: Number, default: 0 },
@@ -23,7 +23,8 @@ const transactionSchema = new mongoose.Schema({
     dueDate: { type: Date },
     daysOverdue: { type: Number }
   },
-  createdAt: { type: Date, required: true, index: true } // Deterministic timestamp
+  createdAt: { type: Date, required: true, index: true }
 });
 
 export const Transaction = mongoose.model('Transaction', transactionSchema);
+

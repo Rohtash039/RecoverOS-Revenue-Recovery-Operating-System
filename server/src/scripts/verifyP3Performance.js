@@ -13,30 +13,29 @@ async function runP3Verification() {
 
   function assert(condition, message) {
     if (condition) {
-      console.log(`✅ PASS: ${message}`);
+      console.log(`PASS: ${message}`);
       passed++;
     } else {
-      console.error(`❌ FAIL: ${message}`);
+      console.error(`FAIL: ${message}`);
       failed++;
     }
   }
 
   try {
-    // 1. Verify Compound Index
-    await RecoveryCase.init(); // ensure indexes are built
+
+    await RecoveryCase.init();
     const indexes = await RecoveryCase.collection.indexes();
     const compoundIndex = indexes.find(idx => idx.key.state === 1 && idx.key.recoveryScore === -1);
-    
+
     assert(
       Boolean(compoundIndex),
       'Compound index { state: 1, recoveryScore: -1 } exists on RecoveryCase collection'
     );
 
-    // 2. Verify Query Execution uses the index
     const explainResult = await RecoveryCase.find({ state: 'AT_RISK' })
       .sort({ recoveryScore: -1 })
       .explain('executionStats');
-      
+
     const winningPlan = explainResult.queryPlanner?.winningPlan;
     const stage = winningPlan?.inputStage?.stage || winningPlan?.stage;
     assert(
@@ -44,7 +43,6 @@ async function runP3Verification() {
       `Query { state: 'AT_RISK' }.sort({ recoveryScore: -1 }) utilizes IXSCAN index scan (Stage: ${stage})`
     );
 
-    // 3. Verify Analytics Caching
     invalidateAnalyticsCache();
     const t0 = Date.now();
     const firstAnalytics = await getDashboardAnalytics();
@@ -62,7 +60,6 @@ async function runP3Verification() {
       `Cached call latency (${t2 - t1}ms) is faster than/equal to uncached query (${t1 - t0}ms)`
     );
 
-    // 4. Verify Cache Invalidation
     invalidateAnalyticsCache();
     const thirdAnalytics = await getDashboardAnalytics();
     assert(
@@ -80,3 +77,4 @@ async function runP3Verification() {
 }
 
 runP3Verification();
+

@@ -1,7 +1,7 @@
 import express from 'express';
-import { 
-  runBatchSimulation, 
-  getSimulationBatchStatus, 
+import {
+  runBatchSimulation,
+  getSimulationBatchStatus,
   resetSimulation,
   resumeSimulationBatch
 } from '../controllers/simulationController.js';
@@ -18,3 +18,4 @@ router.post('/batch/:batchId/resume', apiKeyAuth, resumeSimulationBatch);
 router.post('/reset', strictSimulationLimiter, apiKeyAuth, validateBody(resetSchema), resetSimulation);
 
 export default router;
+

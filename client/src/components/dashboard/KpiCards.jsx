@@ -1,5 +1,3 @@
-import React from 'react';
-import { DollarSign, TrendingUp, AlertTriangle, ShieldCheck, Target, ArrowUpRight } from 'lucide-react';
 import { formatINR } from '../../utils/formatters';
 
 export function KpiCards({ summary }) {
@@ -21,7 +19,7 @@ export function KpiCards({ summary }) {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-      {/* 1. Initial Revenue at Risk */}
+
       <div className="p-3.5 rounded-lg bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 flex flex-col justify-between transition-colors">
         <div className="text-[10px] font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
           Initial at Risk
@@ -36,7 +34,6 @@ export function KpiCards({ summary }) {
         </div>
       </div>
 
-      {/* 2. Recovered Revenue */}
       <div className="p-3.5 rounded-lg bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 flex flex-col justify-between transition-colors">
         <div className="text-[10px] font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
           Revenue Recovered
@@ -51,7 +48,6 @@ export function KpiCards({ summary }) {
         </div>
       </div>
 
-      {/* 3. Recovery Rate */}
       <div className="p-3.5 rounded-lg bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 flex flex-col justify-between transition-colors">
         <div className="text-[10px] font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
           Recovery Rate
@@ -66,7 +62,6 @@ export function KpiCards({ summary }) {
         </div>
       </div>
 
-      {/* 4. Expected Recovery & Attainment */}
       <div className="p-3.5 rounded-lg bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 flex flex-col justify-between transition-colors">
         <div className="text-[10px] font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
           Expected Recovery
@@ -81,7 +76,6 @@ export function KpiCards({ summary }) {
         </div>
       </div>
 
-      {/* 5. Active & Escalated Cases */}
       <div className="p-3.5 rounded-lg bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 flex flex-col justify-between transition-colors">
         <div className="text-[10px] font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
           Active Pipeline
@@ -98,3 +92,4 @@ export function KpiCards({ summary }) {
     </div>
   );
 }
+

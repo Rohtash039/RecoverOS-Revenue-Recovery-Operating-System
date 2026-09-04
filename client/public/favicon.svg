@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Top-to-Left Circular Arrow (Counter-Clockwise) -->
+  <path d="M 88 47 A 38 38 0 0 0 25 24" stroke="#0B1A30" stroke-width="9.5" stroke-linecap="butt" />
+  <polygon points="16,33 21,14 36,25" fill="#0B1A30" />
+
+  <!-- Bottom-to-Right Circular Arrow (Counter-Clockwise) -->
+  <path d="M 12 53 A 38 38 0 0 0 75 76" stroke="#0B1A30" stroke-width="9.5" stroke-linecap="butt" />
+  <polygon points="84,67 79,86 64,75" fill="#0B1A30" />
+
+  <!-- 3 Rising Growth Bars (Emerald Green) -->
+  <!-- Left Bar (Short) -->
+  <polygon points="34,56 42,50 42,72 34,72" fill="#007A5E" />
+  
+  <!-- Middle Bar (Medium) -->
+  <polygon points="46,44 54,37 54,72 46,72" fill="#007A5E" />
+  
+  <!-- Right Bar (Tall) -->
+  <polygon points="58,31 66,24 66,72 58,72" fill="#007A5E" />
+</svg>

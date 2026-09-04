@@ -17,15 +17,14 @@ async function runRateLimitVerification() {
 
   function assert(condition, message) {
     if (condition) {
-      console.log(`✅ PASS: ${message}`);
+      console.log(`PASS: ${message}`);
       passed++;
     } else {
-      console.error(`❌ FAIL: ${message}`);
+      console.error(`FAIL: ${message}`);
       failed++;
     }
   }
 
-  // Create a test limiter with a small limit of 5 requests for deterministic instant testing
   const testLimiter = rateLimit({
     windowMs: 5000,
     max: 5,
@@ -63,13 +62,12 @@ async function runRateLimitVerification() {
   const baseUrl = `http://127.0.0.1:${port}`;
 
   try {
-    // Fire 5 valid requests within the limit
+
     for (let i = 1; i <= 5; i++) {
       const res = await fetch(`${baseUrl}/api/test-action`, { method: 'POST' });
       assert(res.status === 200, `Request ${i}/5 within rate limit succeeded (200 OK)`);
     }
 
-    // Fire the 6th request exceeding the limit
     const exceededRes = await fetch(`${baseUrl}/api/test-action`, { method: 'POST' });
     const exceededData = await exceededRes.json();
 
@@ -78,7 +76,6 @@ async function runRateLimitVerification() {
       'Request 6/5 exceeding rate limit returns 429 RATE_LIMIT_EXCEEDED'
     );
 
-    // Verify Audit Trail recorded RATE_LIMIT_EXCEEDED event
     const rateLimitAudit = await AuditLog.findOne({ event: 'RATE_LIMIT_EXCEEDED' }).sort({ timestamp: -1 });
     assert(
       rateLimitAudit !== null && rateLimitAudit.actor === 'SYSTEM',
@@ -93,3 +90,4 @@ async function runRateLimitVerification() {
 }
 
 runRateLimitVerification();
+

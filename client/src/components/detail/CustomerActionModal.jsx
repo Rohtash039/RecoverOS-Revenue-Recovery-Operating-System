@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { formatINR, formatDate } from '../../utils/formatters';
-import { 
-  CheckCircle2, Clock, CreditCard, QrCode, Copy, Check, ExternalLink, ShieldCheck, AlertCircle, Building2, Smartphone 
+import {
+  CheckCircle2, Clock, CreditCard, QrCode, Copy, Check, ExternalLink, ShieldCheck, AlertCircle, Building2, Smartphone
 } from 'lucide-react';
 
 export function CustomerActionModal({ isOpen, onClose, actionType, caseData }) {
@@ -21,7 +21,6 @@ export function CustomerActionModal({ isOpen, onClose, actionType, caseData }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Determine modal mode
   const normalizedType = (() => {
     const t = (actionType || '').toUpperCase();
     if (t.includes('CONFIRM')) return 'CONFIRMATION';
@@ -46,7 +45,7 @@ export function CustomerActionModal({ isOpen, onClose, actionType, caseData }) {
       title={titleMap[normalizedType]}
       maxWidth="max-w-lg"
     >
-      {/* 1. VIEW CONFIRMATION (Receipt) */}
+
       {normalizedType === 'CONFIRMATION' && (
         <div className="space-y-4 text-xs font-sans">
           <div className="p-4 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-3">
@@ -123,7 +122,6 @@ export function CustomerActionModal({ isOpen, onClose, actionType, caseData }) {
         </div>
       )}
 
-      {/* 2. VIEW STATUS (Live Verification Tracker) */}
       {normalizedType === 'STATUS' && (
         <div className="space-y-4 text-xs font-sans">
           <div className="p-4 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 flex items-center gap-3">
@@ -189,7 +187,6 @@ export function CustomerActionModal({ isOpen, onClose, actionType, caseData }) {
         </div>
       )}
 
-      {/* 3. ALTERNATE PAYMENT (Secondary Checkout Link) */}
       {normalizedType === 'ALTERNATE_PAYMENT' && (
         <div className="space-y-4 text-xs font-sans">
           <div className="p-4 rounded-lg bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-700/80 flex items-center gap-3">
@@ -212,7 +209,6 @@ export function CustomerActionModal({ isOpen, onClose, actionType, caseData }) {
               </span>
             </div>
 
-            {/* Select Method */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-semibold text-neutral-700 dark:text-neutral-300">
                 Select Alternate Method for Customer:
@@ -239,7 +235,6 @@ export function CustomerActionModal({ isOpen, onClose, actionType, caseData }) {
               </div>
             </div>
 
-            {/* Simulated Link */}
             <div className="p-2.5 rounded bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-1">
               <div className="text-[10px] font-mono text-neutral-400 uppercase">Generated Checkout URL</div>
               <div className="font-mono text-[11px] text-sky-600 dark:text-sky-400 truncate">
@@ -268,3 +263,4 @@ export function CustomerActionModal({ isOpen, onClose, actionType, caseData }) {
     </Modal>
   );
 }
+

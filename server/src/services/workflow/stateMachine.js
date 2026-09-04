@@ -10,13 +10,13 @@ const VALID_TRANSITIONS = {
   [CASE_STATES.EXECUTING]: [CASE_STATES.OBSERVING],
   [CASE_STATES.OBSERVING]: [
     CASE_STATES.RECOVERED,
-    CASE_STATES.ANALYZING, // intermediate soft failure if retries remain
+    CASE_STATES.ANALYZING,
     CASE_STATES.STOPPED,
     CASE_STATES.EXPIRED
   ],
-  [CASE_STATES.RECOVERED]: [], // Terminal
-  [CASE_STATES.STOPPED]: [],   // Terminal
-  [CASE_STATES.EXPIRED]: []    // Terminal
+  [CASE_STATES.RECOVERED]: [],
+  [CASE_STATES.STOPPED]: [],
+  [CASE_STATES.EXPIRED]: []
 };
 
 export function validateStateTransition(currentState, nextState, actor = AUDIT_ACTORS.SYSTEM) {
@@ -30,7 +30,6 @@ export function validateStateTransition(currentState, nextState, actor = AUDIT_A
     throw error;
   }
 
-  // Escalated state can only transition with actor HUMAN
   if (currentState === CASE_STATES.ESCALATED && actor !== AUDIT_ACTORS.HUMAN) {
     const error = new Error(`Transition from ESCALATED to ${nextState} requires actor 'HUMAN'`);
     error.statusCode = 403;
@@ -40,3 +39,4 @@ export function validateStateTransition(currentState, nextState, actor = AUDIT_A
 
   return true;
 }
+
