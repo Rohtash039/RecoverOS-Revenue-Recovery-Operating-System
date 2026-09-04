@@ -90,16 +90,18 @@ export default function App() {
 
       try {
         const batchStatus = await RecoverOSAPI.getBatchStatus(activeBatch.batchId);
-        setActiveBatch(batchStatus);
+        if (batchStatus) {
+          setActiveBatch(batchStatus);
+
+          if (batchStatus.status === 'COMPLETED' || batchStatus.status === 'FAILED') {
+            clearInterval(pollingRef.current);
+            setIsRunningBatch(false);
+            await fetchData();
+          }
+        }
 
         const sumData = await RecoverOSAPI.getDashboardSummary();
         setSummary(sumData);
-
-        if (batchStatus.status === 'COMPLETED' || batchStatus.status === 'FAILED') {
-          clearInterval(pollingRef.current);
-          setIsRunningBatch(false);
-          await fetchData();
-        }
       } catch (err) {
         console.error('[Polling Error]', err);
         clearInterval(pollingRef.current);

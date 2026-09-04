@@ -190,7 +190,7 @@ async function runBatchLoop(batch, cases, startIndex, delayMs, signal) {
 }
 
 export async function getBatchStatus(batchId) {
-  if (!batchId) {
+  if (!batchId || batchId === 'undefined' || batchId === 'null' || batchId === 'latest') {
     return await SimulationBatch.findOne().sort({ startedAt: -1 });
   }
   return await SimulationBatch.findOne({ batchId });

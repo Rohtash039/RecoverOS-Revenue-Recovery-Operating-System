@@ -47,7 +47,8 @@ export const RecoverOSAPI = {
   },
 
   getBatchStatus: async (batchId) => {
-    const res = await api.get(`/simulation/batch/${batchId}/status`);
+    const targetId = (batchId && batchId !== 'undefined' && batchId !== 'null') ? batchId : 'latest';
+    const res = await api.get(`/simulation/batch/${targetId}/status`);
     return res.data.data;
   },
 

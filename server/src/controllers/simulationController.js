@@ -37,9 +37,9 @@ export async function getSimulationBatchStatus(req, res, next) {
     const batch = await getBatchStatus(batchId);
 
     if (!batch) {
-      return res.status(404).json({
-        success: false,
-        error: { code: 'NOT_FOUND', message: 'Batch not found' }
+      return res.json({
+        success: true,
+        data: null
       });
     }
 
