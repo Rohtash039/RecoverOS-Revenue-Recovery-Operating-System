@@ -36,7 +36,7 @@ export async function startBatchRun(speed = 'FAST') {
   });
   await batch.save();
 
-  const delayMs = speed === 'ANIMATED' ? 80 : 5;
+  const delayMs = speed === 'ANIMATED' ? 10 : 0;
   activeBatchAbortController = new AbortController();
   const signal = activeBatchAbortController.signal;
 
@@ -102,7 +102,7 @@ export async function resumeBatchRun(batchId, speed = 'FAST') {
     }
   }
 
-  const delayMs = speed === 'ANIMATED' ? 80 : 5;
+  const delayMs = speed === 'ANIMATED' ? 10 : 0;
   activeBatchAbortController = new AbortController();
   const signal = activeBatchAbortController.signal;
 

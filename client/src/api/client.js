@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
-  timeout: 10000
+  timeout: 30000
 });
 
 const configuredApiKey = import.meta.env.VITE_API_KEY;
@@ -41,7 +41,7 @@ export const RecoverOSAPI = {
     return res.data.data;
   },
 
-  runBatchSimulation: async (speed = 'ANIMATED') => {
+  runBatchSimulation: async (speed = 'FAST') => {
     const res = await api.post('/simulation/batch-run', { speed });
     return res.data.data;
   },

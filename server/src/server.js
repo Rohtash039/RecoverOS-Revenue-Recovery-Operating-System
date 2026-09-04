@@ -49,16 +49,6 @@ app.use('/api/simulation', simulationRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/metrics', metricsRoutes);
 
-app.get('/', (req, res) => {
-  res.json({
-    status: 'HEALTHY',
-    service: 'RecoverOS Revenue Recovery API',
-    version: '1.0.0',
-    aiMode: ENV.AI_MODE,
-    timestamp: new Date().toISOString()
-  });
-});
-
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'HEALTHY',

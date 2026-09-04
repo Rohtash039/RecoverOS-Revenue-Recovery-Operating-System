@@ -34,7 +34,7 @@ function createRateLimitHandler(limiterName) {
 
 export const globalLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 300,
+  max: 1200,
   standardHeaders: true,
   legacyHeaders: false,
   handler: createRateLimitHandler('global')
@@ -42,7 +42,7 @@ export const globalLimiter = rateLimit({
 
 export const strictSimulationLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 10,
+  max: 60,
   standardHeaders: true,
   legacyHeaders: false,
   handler: createRateLimitHandler('simulation_mutation')

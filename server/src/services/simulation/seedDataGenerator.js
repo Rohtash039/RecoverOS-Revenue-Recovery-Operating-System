@@ -13,7 +13,7 @@ import {
   AUDIT_ACTORS
 } from '../../config/constants.js';
 import { calculateROS } from '../scoring/opportunityScorer.js';
-import { recordAuditLog } from '../audit/auditService.js';
+import { recordAuditLog, calculateAuditEntryHash, GENESIS_HASH } from '../audit/auditService.js';
 import { invalidateAnalyticsCache } from '../analytics/analyticsService.js';
 
 function createPrng(seedStr) {
@@ -196,19 +196,59 @@ export async function generateSeedDataset(seedKey = DEFAULT_SIMULATION_SEED) {
   await Transaction.insertMany(transactions);
   await RecoveryCase.insertMany(recoveryCases);
 
-  for (const rc of recoveryCases) {
-    await recordAuditLog({
+  const auditEntries = [];
+  let previousHash = GENESIS_HASH;
+  const now = new Date();
+
+  for (let i = 0; i < recoveryCases.length; i++) {
+    const rc = recoveryCases[i];
+    const seq = i + 1;
+    const auditId = `AUD-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}-${String(seq).padStart(4, '0')}`;
+    const payload = {
+      initialRevenueAtRisk: rc.initialRevenueAtRisk,
+      failureCode: transactions.find(t => t.transactionId === rc.transactionId)?.failureCode
+    };
+    const reason = `Revenue risk event detected: ₹${rc.initialRevenueAtRisk.toLocaleString('en-IN')} exposed via ${rc.normalizedFailureCategory}`;
+    const actor = AUDIT_ACTORS.SYSTEM;
+    const event = 'CASE_CREATED';
+
+    const entryHash = calculateAuditEntryHash({
+      previousHash,
+      auditId,
       recoveryCaseId: rc.recoveryCaseId,
       transactionId: rc.transactionId,
-      actor: AUDIT_ACTORS.SYSTEM,
-      event: 'CASE_CREATED',
-      reason: `Revenue risk event detected: ₹${rc.initialRevenueAtRisk.toLocaleString('en-IN')} exposed via ${rc.normalizedFailureCategory}`,
+      actor,
+      event,
+      actionTaken: '',
+      reason,
+      stateBefore: '',
+      stateAfter: CASE_STATES.AT_RISK,
+      financialImpact: 0,
+      payload
+    });
+
+    auditEntries.push({
+      auditId,
+      sequence: seq,
+      recoveryCaseId: rc.recoveryCaseId,
+      transactionId: rc.transactionId,
+      actor,
+      event,
+      actionTaken: null,
+      reason,
       stateBefore: null,
       stateAfter: CASE_STATES.AT_RISK,
       financialImpact: 0,
-      payload: { initialRevenueAtRisk: rc.initialRevenueAtRisk, failureCode: transactions.find(t => t.transactionId === rc.transactionId)?.failureCode }
+      payload,
+      previousHash,
+      entryHash,
+      timestamp: new Date(now.getTime() + seq * 10)
     });
+
+    previousHash = entryHash;
   }
+
+  await AuditLog.insertMany(auditEntries);
 
   console.log(`[Seed Data] Generated ${recoveryCases.length} deterministic synthetic cases in clean AT_RISK state.`);
   return {

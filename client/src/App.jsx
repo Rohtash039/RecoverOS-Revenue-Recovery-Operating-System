@@ -57,19 +57,24 @@ export default function App() {
     }
   };
 
+  const isPollingRef = useRef(false);
+
   useEffect(() => {
-    const initAndReset = async () => {
+    const init = async () => {
+      await fetchData();
       try {
-        await RecoverOSAPI.resetSimulation();
-        setActiveBatch(null);
-        setIsRunningBatch(false);
+        const latestBatch = await RecoverOSAPI.getBatchStatus();
+        if (latestBatch) {
+          setActiveBatch(latestBatch);
+          if (latestBatch.status === 'RUNNING') {
+            setIsRunningBatch(true);
+          }
+        }
       } catch (err) {
-        console.warn('[Auto-reset on refresh error]', err);
-      } finally {
-        await fetchData();
+        // Silently ignore if no batch exists yet
       }
     };
-    initAndReset();
+    init();
   }, []);
 
   useEffect(() => {
@@ -80,6 +85,9 @@ export default function App() {
     if (!isRunningBatch || !activeBatch?.batchId) return;
 
     pollingRef.current = setInterval(async () => {
+      if (isPollingRef.current) return;
+      isPollingRef.current = true;
+
       try {
         const batchStatus = await RecoverOSAPI.getBatchStatus(activeBatch.batchId);
         setActiveBatch(batchStatus);
@@ -96,8 +104,10 @@ export default function App() {
         console.error('[Polling Error]', err);
         clearInterval(pollingRef.current);
         setIsRunningBatch(false);
+      } finally {
+        isPollingRef.current = false;
       }
-    }, 250);
+    }, 750);
 
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
@@ -107,7 +117,7 @@ export default function App() {
   const handleRunBatch = async () => {
     try {
       setIsRunningBatch(true);
-      const batch = await RecoverOSAPI.runBatchSimulation('ANIMATED');
+      const batch = await RecoverOSAPI.runBatchSimulation('FAST');
       setActiveBatch(batch);
     } catch (err) {
       console.error('[Run Batch Error]', err);
