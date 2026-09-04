@@ -5,11 +5,13 @@ import {
   resetSimulation 
 } from '../controllers/simulationController.js';
 import { apiKeyAuth } from '../middleware/apiKeyAuth.js';
+import { validateBody } from '../middleware/validateBody.js';
+import { batchRunSchema, resetSchema } from '../schemas/requestSchemas.js';
 
 const router = express.Router();
 
-router.post('/batch-run', apiKeyAuth, runBatchSimulation);
+router.post('/batch-run', apiKeyAuth, validateBody(batchRunSchema), runBatchSimulation);
 router.get('/batch/:batchId/status', getSimulationBatchStatus);
-router.post('/reset', apiKeyAuth, resetSimulation);
+router.post('/reset', apiKeyAuth, validateBody(resetSchema), resetSimulation);
 
 export default router;
