@@ -18,6 +18,9 @@ export function calculateROS(transaction, customer, referenceTime = SIMULATION_R
     CART_ABANDONED: 80,
     AUTHENTICATION_FAILED: 75,
     INSUFFICIENT_FUNDS: 50,
+    INVOICE_OVERDUE_30D: 85,
+    INVOICE_OVERDUE_60D: 65,
+    INVOICE_OVERDUE_90D: 40,
     FRAUD_SUSPECTED: 0,
     CARD_STOLEN: 0,
     CARD_LOST: 0,
@@ -69,10 +72,21 @@ export function calculateROS(transaction, customer, referenceTime = SIMULATION_R
   const elapsedHours = Math.max(0, (refMs - txMs) / (1000 * 60 * 60));
 
   let recency = 15;
-  if (elapsedHours <= 1) recency = 100;
-  else if (elapsedHours <= 6) recency = 75;
-  else if (elapsedHours <= 24) recency = 40;
-  else recency = 15;
+  const isReceivable = transaction.eventType === 'INVOICE_OVERDUE' || transaction.failureCode?.startsWith('INVOICE_OVERDUE');
+
+  if (isReceivable) {
+    // B2B commercial invoices decay across days rather than hours
+    const elapsedDays = elapsedHours / 24;
+    if (elapsedDays <= 15) recency = 100;
+    else if (elapsedDays <= 30) recency = 80;
+    else if (elapsedDays <= 60) recency = 55;
+    else recency = 30;
+  } else {
+    if (elapsedHours <= 1) recency = 100;
+    else if (elapsedHours <= 6) recency = 75;
+    else if (elapsedHours <= 24) recency = 40;
+    else recency = 15;
+  }
 
   // Weighted Composite Formula
   const rawScore = (

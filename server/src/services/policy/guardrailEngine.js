@@ -22,13 +22,18 @@ export function evaluatePolicy(recoveryCase, recommendedAction, referenceTime = 
   const createdMs = new Date(createdAt).getTime();
   const elapsedHours = Math.max(0, (refMs - createdMs) / (1000 * 60 * 60));
 
-  // 1. Precedence 1: Recovery Window Expired (> 48h)
-  if (elapsedHours > POLICY_CONFIG.MAX_RECOVERY_WINDOW_HOURS) {
+  // 1. Precedence 1: Recovery Window Expired (> 48h for checkout/payments, > 90d for B2B commercial receivables)
+  const isReceivable = recoveryCase.eventType === 'INVOICE_OVERDUE' || 
+                       failureCode?.startsWith('INVOICE_OVERDUE') || 
+                       recoveryCase.transaction?.eventType === 'INVOICE_OVERDUE';
+  const maxWindowHours = isReceivable ? (90 * 24) : POLICY_CONFIG.MAX_RECOVERY_WINDOW_HOURS;
+
+  if (elapsedHours > maxWindowHours) {
     return {
       decision: 'REJECT',
       originalAction: recommendedAction,
       finalAction: RECOVERY_ACTIONS.STOP_RECOVERY,
-      reasons: [`Recovery SLA window of ${POLICY_CONFIG.MAX_RECOVERY_WINDOW_HOURS} hours has elapsed.`],
+      reasons: [`Recovery SLA window of ${maxWindowHours} hours (${isReceivable ? '90 days for B2B commercial receivables' : '48 hours'}) has elapsed.`],
       evaluatedAt: new Date()
     };
   }
@@ -58,7 +63,7 @@ export function evaluatePolicy(recoveryCase, recommendedAction, referenceTime = 
 
   // 4. Precedence 4: Contact Limit Breached (>= 2)
   if (
-    [RECOVERY_ACTIONS.SEND_PAYMENT_REMINDER, RECOVERY_ACTIONS.SEND_CHECKOUT_REMINDER].includes(recommendedAction) &&
+    [RECOVERY_ACTIONS.SEND_PAYMENT_REMINDER, RECOVERY_ACTIONS.SEND_CHECKOUT_REMINDER, RECOVERY_ACTIONS.SEND_INVOICE_REMINDER].includes(recommendedAction) &&
     contactCount >= POLICY_CONFIG.MAX_CUSTOMER_CONTACTS
   ) {
     return {

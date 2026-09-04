@@ -49,7 +49,13 @@ export function simulateExecutionOutcome(recoveryCase, actionType, attemptNumber
   // 4. Action & Failure Code Multipliers
   let actionMultiplier = 1.0;
 
-  if (eventType === 'CHECKOUT_ABANDONED') {
+  if (eventType === 'INVOICE_OVERDUE') {
+    if (actionType === RECOVERY_ACTIONS.SEND_INVOICE_REMINDER) {
+      actionMultiplier = failureCode === 'INVOICE_OVERDUE_30D' ? 0.95 : (failureCode === 'INVOICE_OVERDUE_60D' ? 0.80 : 0.60);
+    } else {
+      actionMultiplier = 0.65;
+    }
+  } else if (eventType === 'CHECKOUT_ABANDONED') {
     if (actionType === RECOVERY_ACTIONS.SEND_CHECKOUT_REMINDER) {
       actionMultiplier = 0.85;
     } else {

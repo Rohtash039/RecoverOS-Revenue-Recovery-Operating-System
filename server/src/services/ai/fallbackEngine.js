@@ -45,6 +45,24 @@ export function getFallbackDiagnosis(transaction, customer) {
     };
   }
 
+  if (normCategory === 'RECEIVABLE_OVERDUE') {
+    return {
+      diagnosisCategory: 'RECEIVABLE_OVERDUE',
+      rootCauseAnalysis: 'B2B commercial invoice is past due payment terms with outstanding receivables balance.',
+      recommendedAction: RECOVERY_ACTIONS.SEND_INVOICE_REMINDER,
+      waitMinutes: 120,
+      confidence: 0.88,
+      reasoning: 'Commercial B2B account with outstanding invoice; structured multi-channel invoice reminder with Razorpay payment link recommended.',
+      customerMessage: {
+        channel: 'EMAIL',
+        headline: 'Commercial Invoice Payment Reminder',
+        body: 'Your business invoice is currently overdue. Please review statement details and settle via secure digital invoice link.',
+        cta: 'Pay Invoice'
+      },
+      fallbackUsed: true
+    };
+  }
+
   if (normCategory === 'INSUFFICIENT_FUNDS') {
     return {
       diagnosisCategory: 'INSUFFICIENT_FUNDS',

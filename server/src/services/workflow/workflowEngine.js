@@ -174,7 +174,7 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
     recoveryCase.retryCount = attemptNumber;
     recoveryCase.lastActionAt = new Date();
 
-    if ([RECOVERY_ACTIONS.SEND_PAYMENT_REMINDER, RECOVERY_ACTIONS.SEND_CHECKOUT_REMINDER].includes(currentAction)) {
+    if ([RECOVERY_ACTIONS.SEND_PAYMENT_REMINDER, RECOVERY_ACTIONS.SEND_CHECKOUT_REMINDER, RECOVERY_ACTIONS.SEND_INVOICE_REMINDER].includes(currentAction)) {
       recoveryCase.contactCount++;
     }
 

@@ -6,8 +6,8 @@ const transactionSchema = new mongoose.Schema({
   customerId: { type: String, required: true, index: true },
   amount: { type: Number, required: true }, // In INR
   currency: { type: String, default: 'INR' },
-  eventType: { type: String, enum: ['FAILED_PAYMENT', 'CHECKOUT_ABANDONED'], required: true },
-  paymentMethod: { type: String, enum: ['CARD', 'UPI', 'NETBANKING', 'WALLET'] },
+  eventType: { type: String, enum: ['FAILED_PAYMENT', 'CHECKOUT_ABANDONED', 'INVOICE_OVERDUE'], required: true },
+  paymentMethod: { type: String, enum: ['CARD', 'UPI', 'NETBANKING', 'WALLET', 'BANK_TRANSFER'] },
   failureCode: { 
     type: String, 
     enum: RAW_FAILURE_CODES,
@@ -18,7 +18,10 @@ const transactionSchema = new mongoose.Schema({
   metadata: {
     cartItemsCount: { type: Number, default: 0 },
     gatewayLatencyMs: { type: Number, default: 0 },
-    clientIpLocation: { type: String, default: 'IN' }
+    clientIpLocation: { type: String, default: 'IN' },
+    invoiceNumber: { type: String },
+    dueDate: { type: Date },
+    daysOverdue: { type: Number }
   },
   createdAt: { type: Date, required: true, index: true } // Deterministic timestamp
 });

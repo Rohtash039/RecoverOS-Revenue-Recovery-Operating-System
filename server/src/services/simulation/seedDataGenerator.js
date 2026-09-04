@@ -51,9 +51,11 @@ export async function generateSeedDataset(seedKey = DEFAULT_SIMULATION_SEED) {
   await SimulationBatch.deleteMany({});
 
   const failureDistributions = [
-    { code: 'BANK_TIMEOUT', reason: 'Issuing bank gateway response timeout (91)', eventType: 'FAILED_PAYMENT', count: 35 },
-    { code: 'INSUFFICIENT_FUNDS', reason: 'Card balance or account limit exceeded (51)', eventType: 'FAILED_PAYMENT', count: 25 },
-    { code: 'CART_ABANDONED', reason: 'User dropped off during checkout step', eventType: 'CHECKOUT_ABANDONED', count: 20 },
+    { code: 'BANK_TIMEOUT', reason: 'Issuing bank gateway response timeout (91)', eventType: 'FAILED_PAYMENT', count: 25 },
+    { code: 'INSUFFICIENT_FUNDS', reason: 'Card balance or account limit exceeded (51)', eventType: 'FAILED_PAYMENT', count: 20 },
+    { code: 'INVOICE_OVERDUE_30D', reason: 'Commercial B2B invoice overdue by 30 days', eventType: 'INVOICE_OVERDUE', count: 12 },
+    { code: 'INVOICE_OVERDUE_60D', reason: 'Commercial B2B invoice overdue by 60 days', eventType: 'INVOICE_OVERDUE', count: 8 },
+    { code: 'CART_ABANDONED', reason: 'User dropped off during checkout step', eventType: 'CHECKOUT_ABANDONED', count: 15 },
     { code: 'AUTHENTICATION_FAILED', reason: '3DS OTP session expired or failed (32)', eventType: 'FAILED_PAYMENT', count: 12 },
     { code: 'FRAUD_SUSPECTED', reason: 'Security algorithm blocked transaction (59)', eventType: 'FAILED_PAYMENT', count: 4 },
     { code: 'CARD_STOLEN', reason: 'Issuer confirmed stolen card instrument (43)', eventType: 'FAILED_PAYMENT', count: 2 },
@@ -121,6 +123,8 @@ export async function generateSeedDataset(seedKey = DEFAULT_SIMULATION_SEED) {
       if (caseIndex === 3 || caseIndex === 17 || caseIndex === 42 || caseIndex === 68) {
         // High-Value cases >= 50k
         amount = 52000 + Math.floor(prng() * 30000); // 52,000 - 82,000
+      } else if (dist.eventType === 'INVOICE_OVERDUE') {
+        amount = 18000 + Math.floor(prng() * 32000); // 18,000 - 50,000 (B2B commercial ticket sizes)
       } else if (caseIndex <= 20) {
         amount = 15000 + Math.floor(prng() * 25000); // 15,000 - 40,000
       } else if (caseIndex <= 80) {
@@ -129,12 +133,33 @@ export async function generateSeedDataset(seedKey = DEFAULT_SIMULATION_SEED) {
         amount = 499 + Math.floor(prng() * 500);     // 499 - 999
       }
 
-      // Timestamp generation (0.2h to 36h before reference time)
-      const hoursAgo = 0.2 + prng() * 34;
-      const createdAt = new Date(refMs - hoursAgo * 3600 * 1000);
+      // Timestamp & payment method generation
+      let createdAt;
+      let paymentMethod;
+      let invoiceMetadata = {};
 
-      const paymentMethods = ['UPI', 'CARD', 'NETBANKING', 'WALLET'];
-      const paymentMethod = dist.eventType === 'CHECKOUT_ABANDONED' ? 'UPI' : paymentMethods[Math.floor(prng() * paymentMethods.length)];
+      if (dist.eventType === 'INVOICE_OVERDUE') {
+        const daysOverdue = dist.code === 'INVOICE_OVERDUE_30D' ? (20 + Math.floor(prng() * 10)) : (45 + Math.floor(prng() * 20));
+        createdAt = new Date(refMs - daysOverdue * 24 * 3600 * 1000);
+        paymentMethod = 'BANK_TRANSFER';
+        const dueDate = new Date(createdAt.getTime() + 15 * 24 * 3600 * 1000);
+        invoiceMetadata = {
+          invoiceNumber: `INV-2026-${String(2000 + caseIndex)}`,
+          dueDate,
+          daysOverdue,
+          cartItemsCount: 0,
+          gatewayLatencyMs: 0
+        };
+      } else {
+        const hoursAgo = 0.2 + prng() * 34;
+        createdAt = new Date(refMs - hoursAgo * 3600 * 1000);
+        const paymentMethods = ['UPI', 'CARD', 'NETBANKING', 'WALLET'];
+        paymentMethod = dist.eventType === 'CHECKOUT_ABANDONED' ? 'UPI' : paymentMethods[Math.floor(prng() * paymentMethods.length)];
+        invoiceMetadata = {
+          cartItemsCount: dist.eventType === 'CHECKOUT_ABANDONED' ? Math.floor(1 + prng() * 5) : 0,
+          gatewayLatencyMs: Math.floor(200 + prng() * 2500)
+        };
+      }
 
       const txnObj = {
         transactionId: txnId,
@@ -146,10 +171,7 @@ export async function generateSeedDataset(seedKey = DEFAULT_SIMULATION_SEED) {
         failureCode: dist.code,
         failureReason: dist.reason,
         attempts: 0,
-        metadata: {
-          cartItemsCount: dist.eventType === 'CHECKOUT_ABANDONED' ? Math.floor(1 + prng() * 5) : 0,
-          gatewayLatencyMs: Math.floor(200 + prng() * 2500)
-        },
+        metadata: invoiceMetadata,
         createdAt
       };
       transactions.push(txnObj);

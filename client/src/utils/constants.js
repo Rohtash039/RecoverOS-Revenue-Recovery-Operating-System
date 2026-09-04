@@ -71,6 +71,7 @@ export const ACTION_LABELS = {
   RETRY_PAYMENT: 'Retry Payment',
   SEND_PAYMENT_REMINDER: 'Payment Reminder',
   SEND_CHECKOUT_REMINDER: 'Checkout Reminder',
+  SEND_INVOICE_REMINDER: 'Invoice Reminder',
   SUGGEST_ALTERNATE_PAYMENT: 'Alternate Payment Link',
   ESCALATE_TO_HUMAN: 'Escalate to Human',
   STOP_RECOVERY: 'Stop Recovery'
