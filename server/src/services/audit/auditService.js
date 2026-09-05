@@ -35,6 +35,8 @@ export function calculateAuditEntryHash({
   return crypto.createHash('sha256').update(content).digest('hex');
 }
 
+let standaloneAuditQueue = Promise.resolve();
+
 export async function recordAuditLog({
   recoveryCaseId,
   transactionId,
@@ -47,72 +49,78 @@ export async function recordAuditLog({
   financialImpact = 0,
   payload = null
 }) {
-  const MAX_CONCURRENCY_RETRIES = 25;
-  const targetTxnId = transactionId || recoveryCaseId;
+  return new Promise((resolve) => {
+    standaloneAuditQueue = standaloneAuditQueue.then(async () => {
+      const MAX_CONCURRENCY_RETRIES = 25;
+      const targetTxnId = transactionId || recoveryCaseId;
 
-  for (let attempt = 0; attempt < MAX_CONCURRENCY_RETRIES; attempt++) {
-    try {
-      const auditId = `AUD-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+      for (let attempt = 0; attempt < MAX_CONCURRENCY_RETRIES; attempt++) {
+        try {
+          const auditId = `AUD-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 
-      const lastEntry = await AuditLog.findOne().sort({ sequence: -1, timestamp: -1, _id: -1 });
-      const sequence = lastEntry ? ((lastEntry.sequence || 0) + 1) : 1;
-      const previousHash = lastEntry?.entryHash || GENESIS_HASH;
+          const lastEntry = await AuditLog.findOne().sort({ sequence: -1, timestamp: -1, _id: -1 });
+          const sequence = lastEntry ? ((lastEntry.sequence || 0) + 1) : 1;
+          const previousHash = lastEntry?.entryHash || GENESIS_HASH;
 
-      const entryHash = calculateAuditEntryHash({
-        previousHash,
-        auditId,
-        recoveryCaseId,
-        transactionId: targetTxnId,
-        actor,
-        event,
-        actionTaken,
-        reason,
-        stateBefore,
-        stateAfter,
-        financialImpact,
-        payload
-      });
+          const entryHash = calculateAuditEntryHash({
+            previousHash,
+            auditId,
+            recoveryCaseId,
+            transactionId: targetTxnId,
+            actor,
+            event,
+            actionTaken,
+            reason,
+            stateBefore,
+            stateAfter,
+            financialImpact,
+            payload
+          });
 
-      const log = new AuditLog({
-        auditId,
-        sequence,
-        recoveryCaseId,
-        transactionId: targetTxnId,
-        actor,
-        event,
-        actionTaken,
-        reason,
-        stateBefore,
-        stateAfter,
-        financialImpact,
-        payload,
-        previousHash,
-        entryHash,
-        timestamp: new Date()
-      });
+          const log = new AuditLog({
+            auditId,
+            sequence,
+            recoveryCaseId,
+            transactionId: targetTxnId,
+            actor,
+            event,
+            actionTaken,
+            reason,
+            stateBefore,
+            stateAfter,
+            financialImpact,
+            payload,
+            previousHash,
+            entryHash,
+            timestamp: new Date()
+          });
 
-      await log.save();
-      return log;
-    } catch (error) {
+          await log.save();
+          resolve(log);
+          return;
+        } catch (error) {
+          const isDuplicateKey = error.code === 11000 ||
+                                 (error.name === 'MongoServerError' && error.code === 11000) ||
+                                 (error.message && error.message.includes('E11000'));
 
-      const isDuplicateKey = error.code === 11000 ||
-                             (error.name === 'MongoServerError' && error.code === 11000) ||
-                             (error.message && error.message.includes('E11000'));
+          if (isDuplicateKey && attempt < MAX_CONCURRENCY_RETRIES - 1) {
+            const backoffMs = Math.floor(Math.random() * 25) + (attempt * 5);
+            await new Promise(res => setTimeout(res, backoffMs));
+            continue;
+          }
 
-      if (isDuplicateKey && attempt < MAX_CONCURRENCY_RETRIES - 1) {
-
-        const backoffMs = Math.floor(Math.random() * 25) + (attempt * 5);
-        await new Promise(resolve => setTimeout(resolve, backoffMs));
-        continue;
+          console.error(`[Audit Log Error] Failed to write audit event ${event}: ${error.message}`);
+          resolve(null);
+          return;
+        }
       }
 
-      console.error(`[Audit Log Error] Failed to write audit event ${event}: ${error.message}`);
-
-      return null;
-    }
-  }
-
-  return null;
+      resolve(null);
+    }).catch(err => {
+      console.error(`[Audit Queue Error] ${err.message}`);
+      resolve(null);
+    });
+  });
 }
 
 export async function verifyAuditChainIntegrity() {

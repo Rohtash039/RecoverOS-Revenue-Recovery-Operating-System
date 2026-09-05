@@ -80,8 +80,24 @@ export function AnalyticsCharts({ categories = [], expectedVsActual = {}, casesB
                 height={26}
                 formatter={(value) => <span className="text-xs text-neutral-600 dark:text-neutral-400">{value === 'atRisk' ? 'Initial at Risk' : 'Recovered'}</span>}
               />
-              <Bar dataKey="atRisk" fill="#A3A3A3" radius={[2, 2, 0, 0]} name="atRisk" />
-              <Bar dataKey="recovered" fill="#16A34A" radius={[2, 2, 0, 0]} name="recovered" />
+              <Bar
+                dataKey="atRisk"
+                fill="#A3A3A3"
+                radius={[2, 2, 0, 0]}
+                name="atRisk"
+                isAnimationActive={true}
+                animationDuration={300}
+                animationEasing="ease-out"
+              />
+              <Bar
+                dataKey="recovered"
+                fill="#16A34A"
+                radius={[2, 2, 0, 0]}
+                name="recovered"
+                isAnimationActive={true}
+                animationDuration={300}
+                animationEasing="ease-out"
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>

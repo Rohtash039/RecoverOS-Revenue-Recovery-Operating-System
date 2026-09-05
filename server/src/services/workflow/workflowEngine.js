@@ -8,9 +8,23 @@ import { recordAuditLog } from '../audit/auditService.js';
 import { validateStateTransition } from './stateMachine.js';
 import { invalidateAnalyticsCache } from '../analytics/analyticsService.js';
 
-export async function processCaseWorkflow(recoveryCase, customer, transaction) {
+export async function processCaseWorkflow(recoveryCase, customer, transaction, context = null) {
   const caseId = recoveryCase.recoveryCaseId;
   const txnId = transaction?.transactionId || recoveryCase.transactionId;
+
+  const logAudit = async (entry) => {
+    if (context?.recordAudit) {
+      return context.recordAudit(entry);
+    }
+    return recordAuditLog(entry);
+  };
+
+  const executeAction = async (params) => {
+    if (context?.executeWithIdempotency) {
+      return context.executeWithIdempotency(params);
+    }
+    return executeWithIdempotency(params);
+  };
 
   validateStateTransition(recoveryCase.state, CASE_STATES.SCORING);
   recoveryCase.state = CASE_STATES.SCORING;
@@ -22,7 +36,7 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
   const estimatedProb = (recoveryScore / 100) * probMultiplier;
   recoveryCase.expectedRecovery = Math.round(recoveryCase.initialRevenueAtRisk * estimatedProb);
 
-  await recordAuditLog({
+  await logAudit({
     recoveryCaseId: caseId,
     transactionId: txnId,
     actor: AUDIT_ACTORS.SYSTEM,
@@ -39,7 +53,7 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
   const diagnosis = await diagnoseRecoveryCase(transaction, customer, recoveryScore);
   recoveryCase.aiDiagnosis = diagnosis;
 
-  await recordAuditLog({
+  await logAudit({
     recoveryCaseId: caseId,
     transactionId: txnId,
     actor: AUDIT_ACTORS.AI_AGENT,
@@ -55,13 +69,14 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
 
   validateStateTransition(recoveryCase.state, CASE_STATES.POLICY_CHECK);
   recoveryCase.state = CASE_STATES.POLICY_CHECK;
+  const caseObj = typeof recoveryCase.toObject === 'function' ? recoveryCase.toObject() : recoveryCase;
   const policyResult = evaluatePolicy(
-    { ...recoveryCase.toObject(), failureCode: transaction.failureCode },
+    { ...caseObj, failureCode: transaction.failureCode },
     diagnosis.recommendedAction
   );
   recoveryCase.policyEvaluation = policyResult;
 
-  await recordAuditLog({
+  await logAudit({
     recoveryCaseId: caseId,
     transactionId: txnId,
     actor: AUDIT_ACTORS.POLICY_ENGINE,
@@ -76,7 +91,7 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
     recoveryCase.state = CASE_STATES.STOPPED;
     recoveryCase.terminalReason = policyResult.reasons.join(' | ');
 
-    await recordAuditLog({
+    await logAudit({
       recoveryCaseId: caseId,
       transactionId: txnId,
       actor: AUDIT_ACTORS.POLICY_ENGINE,
@@ -88,7 +103,10 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
     });
 
     recoveryCase.updatedAt = new Date();
-    await recoveryCase.save();
+    if (!context) {
+      await recoveryCase.save();
+      invalidateAnalyticsCache();
+    }
     return recoveryCase;
   }
 
@@ -98,7 +116,7 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
     recoveryCase.pendingHumanAction = policyResult.originalAction || diagnosis.recommendedAction;
     recoveryCase.terminalReason = policyResult.reasons.join(' | ');
 
-    await recordAuditLog({
+    await logAudit({
       recoveryCaseId: caseId,
       transactionId: txnId,
       actor: AUDIT_ACTORS.POLICY_ENGINE,
@@ -111,7 +129,10 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
     });
 
     recoveryCase.updatedAt = new Date();
-    await recoveryCase.save();
+    if (!context) {
+      await recoveryCase.save();
+      invalidateAnalyticsCache();
+    }
     return recoveryCase;
   }
 
@@ -127,7 +148,7 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
 
     recoveryCase.state = CASE_STATES.EXECUTING;
 
-    await recordAuditLog({
+    await logAudit({
       recoveryCaseId: caseId,
       transactionId: txnId,
       actor: AUDIT_ACTORS.SYSTEM,
@@ -140,7 +161,7 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
 
     recoveryCase.state = CASE_STATES.OBSERVING;
 
-    const { outcome } = await executeWithIdempotency({
+    const { outcome } = await executeAction({
       recoveryCaseId: caseId,
       transactionId: txnId,
       workflowStep,
@@ -174,7 +195,7 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
       recoveryCase.recoveredAmount = outcome.recoveredAmount;
       recoveryCase.terminalReason = outcome.reason;
 
-      await recordAuditLog({
+      await logAudit({
         recoveryCaseId: caseId,
         transactionId: txnId,
         actor: AUDIT_ACTORS.SIMULATOR,
@@ -187,7 +208,7 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
       });
       break;
     } else {
-      await recordAuditLog({
+      await logAudit({
         recoveryCaseId: caseId,
         transactionId: txnId,
         actor: AUDIT_ACTORS.SIMULATOR,
@@ -204,7 +225,7 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
         recoveryCase.state = CASE_STATES.STOPPED;
         recoveryCase.terminalReason = `Maximum retry ceiling (${POLICY_CONFIG.MAX_PAYMENT_RETRIES}) exhausted.`;
 
-        await recordAuditLog({
+        await logAudit({
           recoveryCaseId: caseId,
           transactionId: txnId,
           actor: AUDIT_ACTORS.POLICY_ENGINE,
@@ -215,7 +236,6 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
           stateAfter: CASE_STATES.STOPPED
         });
       } else {
-
         if (currentAction === RECOVERY_ACTIONS.RETRY_PAYMENT && transaction.failureCode === 'INSUFFICIENT_FUNDS') {
           currentAction = RECOVERY_ACTIONS.SUGGEST_ALTERNATE_PAYMENT;
         }
@@ -224,8 +244,10 @@ export async function processCaseWorkflow(recoveryCase, customer, transaction) {
   }
 
   recoveryCase.updatedAt = new Date();
-  await recoveryCase.save();
-  invalidateAnalyticsCache();
+  if (!context) {
+    await recoveryCase.save();
+    invalidateAnalyticsCache();
+  }
   return recoveryCase;
 }
 

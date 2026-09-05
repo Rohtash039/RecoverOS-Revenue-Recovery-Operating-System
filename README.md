@@ -319,34 +319,34 @@ sequenceDiagram
     participant Exec as Bounded Execution
     participant Audit as Hash-Chained Audit Trail
 
-    AI->>Policy: Proposed Action + Customer Copy
-    Note over Policy: Sequential 7-Rule Precedence Evaluation
+    AI->>Policy: Propose Action & Copy
+    Note over Policy: Evaluates 7 Rules in Strict Precedence
 
-    alt Rule 1: Recovery Window / Commercial Invoice SLA Expired
+    alt Rule 1: SLA Expired
         Policy->>Audit: Log REJECT → STOP_RECOVERY
         Policy-->>Exec: Transition Case to STOPPED
 
-    else Rule 2: Hard-Prohibited Failure Code
+    else Rule 2: Hard-Prohibited Code
         Policy->>Audit: Log REJECT → STOP_RECOVERY
         Policy-->>Exec: Terminate Recovery → STOPPED
 
-    else Rule 3: Payment Retry Ceiling Reached (Retries >= 2)
+    else Rule 3: Retry Ceiling (>= 2)
         Policy->>Audit: Log MODIFY → SUGGEST_ALTERNATE_PAYMENT
-        Policy->>Exec: Dispatch Alternate Payment Notification
+        Policy->>Exec: Dispatch Alternate Payment
 
-    else Rule 4: Contact Frequency Ceiling Reached (Contacts >= 2)
+    else Rule 4: Contact Ceiling (>= 2)
         Policy->>Audit: Log REJECT → STOP_RECOVERY
-        Policy-->>Exec: Halt Customer Communications
+        Policy-->>Exec: Halt Communications → STOPPED
 
-    else Rule 5: High-Value Transaction (Amount >= ₹50,000)
+    else Rule 5: High Value (>= ₹50,000)
         Policy->>Audit: Log MODIFY → ESCALATE_TO_HUMAN
-        Policy->>Queue: Enqueue for Operator Review → ESCALATED
+        Policy->>Queue: Enqueue for Human Review → ESCALATED
 
-    else Rule 6: Low AI Confidence (Confidence < 0.65)
+    else Rule 6: Low AI Confidence (< 0.65)
         Policy->>Audit: Log MODIFY → ESCALATE_TO_HUMAN
-        Policy->>Queue: Enqueue for Operator Review → ESCALATED
+        Policy->>Queue: Enqueue for Human Review → ESCALATED
 
-    else Rule 7: Default Policy Approval
+    else Rule 7: Policy Approved (Default)
         Policy->>Audit: Log APPROVE
         Policy->>Exec: Dispatch Bounded Execution
     end
@@ -640,7 +640,7 @@ Open your browser at: **`http://localhost:5173`**
 | :--- | :--- | :--- |
 | `PORT` | Express backend listening port | `5000` |
 | `NODE_ENV` | Application environment | `production` |
-| `MONGO_URI` | MongoDB database URI | `mongodb://127.0.0.1:27017/recoveros` |
+| `MONGO_URI` | MongoDB database URI | `mongodb+srv://<db_user><pass_word>@recoveros.ovcnkiy.mongodb.net/?appName=RecoverOS` |
 | `GROK_API_KEY` | xAI Grok API Key (for Live Mode) | `xai-...` (or blank for Fallback) |
 | `GROK_MODEL` | xAI Model Identifier | `grok-2-latest` |
 | `CLIENT_URL` | Allowed CORS origin | `https://recoveros-five.vercel.app/` |
@@ -648,7 +648,7 @@ Open your browser at: **`http://localhost:5173`**
 | `AI_MODE` | AI Mode (`live` or `deterministic`) | `deterministic` |
 | `SIMULATION_SEED` | Global seed string for deterministic simulator | `RAZORPAY_BUILDATHON_2026` |
 | `API_KEY` | Backend API Key (bypassed in dev if blank) | `secret_api_key_xxx` |
-| `VITE_API_BASE_URL` | Frontend API client base URL | `http://localhost:5000/api` |
+| `VITE_API_BASE_URL` | Frontend API client base URL | `https://recoveros-robu.onrender.com/api` |
 | `VITE_API_KEY` | Frontend API Key sent via `x-api-key` | `secret_api_key_xxx` |
 
 ---

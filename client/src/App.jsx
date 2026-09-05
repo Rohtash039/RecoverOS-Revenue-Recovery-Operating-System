@@ -89,7 +89,11 @@ export default function App() {
       isPollingRef.current = true;
 
       try {
-        const batchStatus = await RecoverOSAPI.getBatchStatus(activeBatch.batchId);
+        const [batchStatus, sumData] = await Promise.all([
+          RecoverOSAPI.getBatchStatus(activeBatch.batchId),
+          RecoverOSAPI.getDashboardSummary()
+        ]);
+
         if (batchStatus) {
           setActiveBatch(batchStatus);
 
@@ -100,8 +104,9 @@ export default function App() {
           }
         }
 
-        const sumData = await RecoverOSAPI.getDashboardSummary();
-        setSummary(sumData);
+        if (sumData) {
+          setSummary(sumData);
+        }
       } catch (err) {
         console.error('[Polling Error]', err);
         clearInterval(pollingRef.current);
@@ -109,7 +114,7 @@ export default function App() {
       } finally {
         isPollingRef.current = false;
       }
-    }, 750);
+    }, 350);
 
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
