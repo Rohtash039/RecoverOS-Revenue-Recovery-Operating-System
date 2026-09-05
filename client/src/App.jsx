@@ -61,18 +61,14 @@ export default function App() {
 
   useEffect(() => {
     const init = async () => {
-      await fetchData();
       try {
-        const latestBatch = await RecoverOSAPI.getBatchStatus();
-        if (latestBatch) {
-          setActiveBatch(latestBatch);
-          if (latestBatch.status === 'RUNNING') {
-            setIsRunningBatch(true);
-          }
-        }
+        await RecoverOSAPI.resetSimulation();
+        setActiveBatch(null);
+        setIsRunningBatch(false);
       } catch (err) {
-        // Silently ignore if no batch exists yet
+        console.error('[Init Reset Error]', err);
       }
+      await fetchData();
     };
     init();
   }, []);

@@ -312,7 +312,58 @@ async function runBatchLoop(batch, cases, startIndex, chunkDelayMs, signal) {
       }
 
       if (chunkAuditDocs.length > 0) {
-        await AuditLog.insertMany(chunkAuditDocs, { ordered: true });
+        const MAX_INSERT_RETRIES = 5;
+        let inserted = false;
+
+        for (let attempt = 0; attempt < MAX_INSERT_RETRIES && !inserted; attempt++) {
+          try {
+            if (attempt > 0) {
+
+              const liveLastEntry = await AuditLog.findOne().sort({ sequence: -1, timestamp: -1, _id: -1 });
+              let retrySeq = liveLastEntry ? (liveLastEntry.sequence || 0) : 0;
+              let retryPrevHash = liveLastEntry?.entryHash || GENESIS_HASH;
+
+              for (const doc of chunkAuditDocs) {
+                retrySeq++;
+                doc.sequence = retrySeq;
+                doc.previousHash = retryPrevHash;
+                doc.entryHash = calculateAuditEntryHash({
+                  previousHash: retryPrevHash,
+                  auditId: doc.auditId,
+                  recoveryCaseId: doc.recoveryCaseId,
+                  transactionId: doc.transactionId,
+                  actor: doc.actor,
+                  event: doc.event,
+                  actionTaken: doc.actionTaken || '',
+                  reason: doc.reason || '',
+                  stateBefore: doc.stateBefore || '',
+                  stateAfter: doc.stateAfter || '',
+                  financialImpact: Number(doc.financialImpact) || 0,
+                  payload: doc.payload || null
+                });
+                retryPrevHash = doc.entryHash;
+              }
+
+              // Update the running counters so the *next* chunk chains correctly
+              currentSequence = retrySeq;
+              currentPrevHash = retryPrevHash;
+            }
+
+            await AuditLog.insertMany(chunkAuditDocs, { ordered: true });
+            inserted = true;
+          } catch (insertErr) {
+            const isDuplicateKey = insertErr.code === 11000 ||
+              (insertErr.name === 'MongoServerError' && insertErr.code === 11000) ||
+              (insertErr.message && insertErr.message.includes('E11000'));
+
+            if (!isDuplicateKey || attempt >= MAX_INSERT_RETRIES - 1) {
+              throw insertErr; // Non-recoverable or retries exhausted
+            }
+
+            // Brief backoff before retry
+            await new Promise(res => setTimeout(res, Math.floor(Math.random() * 30) + (attempt * 10)));
+          }
+        }
       }
       if (chunkActionDocs.length > 0) {
         await RecoveryAction.insertMany(chunkActionDocs, { ordered: false });

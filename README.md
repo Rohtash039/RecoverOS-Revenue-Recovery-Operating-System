@@ -150,99 +150,170 @@ A recovery system therefore needs more than retry logic or a dashboard. It needs
 
 ## 4. End-to-End System Architecture
 
-```mermaid
-graph TD
+> **5-Tier Hierarchical Architecture** — Request flow moves top-down from the Presentation Layer through a secured API Gateway, into Domain Services orchestrating AI Intelligence, and finally persisting to MongoDB.
 
-    subgraph Client["Frontend Layer — React + Vite + Tailwind CSS"]
-        UI["Fintech Operations Console"]
-        KPICards["Financial KPI Suite"]
-        Queue["Recovery Queue"]
-        Drawer["Investigation Drawer"]
-        ActivityStream["Agent Activity Stream"]
-        AuditTrail["Tamper-Evident Audit Trail"]
-        Currency["Currency Display & Conversion Controls"]
-        Modals["Recovery / Status / Alternate Payment Modals"]
-    end
+```
+═══════════════════════════════════════════════════════════════════════════════════
+ TIER 1 — PRESENTATION LAYER                          React 18 · Vite · Tailwind
+═══════════════════════════════════════════════════════════════════════════════════
 
-    subgraph API["Backend API Layer — Node.js + Express"]
-        Router["REST Routes"]
-        RateLimiter["Tiered Rate Limiting"]
-        ApiKeyAuth["API Key Authentication"]
-        ZodValidator["Zod Request Validation"]
-        ErrorHandler["Normalized Error Handler"]
-        Controllers["Route Handlers / Controllers"]
-    end
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │                     🖥️  Fintech Operations Console                         │
+  │                                                                            │
+  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
+  │  │ 📊 Financial  │  │ 📋 Recovery  │  │ 🔍 Case      │  │ 🌐 Currency  │   │
+  │  │ KPI Suite    │  │ Queue Grid   │  │ Inspector    │  │ Converter    │   │
+  │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘   │
+  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                     │
+  │  │ 🤖 Agent      │  │ 🛡️ Audit     │  │ 💳 Payment   │                     │
+  │  │ Activity     │  │ Ledger       │  │ Modals       │                     │
+  │  └──────────────┘  └──────────────┘  └──────────────┘                     │
+  └─────────────────────────────┬─────────────────────────────────────────────┘
+                                │  HTTP / REST + x-api-key
+                                ▼
+═══════════════════════════════════════════════════════════════════════════════════
+ TIER 2 — API GATEWAY & MIDDLEWARE                     Node.js · Express · Zod
+═══════════════════════════════════════════════════════════════════════════════════
 
-    subgraph Recovery["Recovery Domain Services"]
-        Scorer["Opportunity Scorer — ROS 0–100"]
-        Policy["Policy & Guardrail Engine — 7 Precedence Rules"]
-        Workflow["Workflow State Machine + Idempotency"]
-        Executor["Bounded Recovery Execution"]
-        Analytics["Financial Attribution & Metrics"]
-        Audit["SHA-256 Hash-Chained Audit Service"]
-        Simulator["Seeded Deterministic Outcome Simulator"]
-    end
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │                                                                            │
+  │   REQUEST ──▶ [ 🚦 Rate Limiter ] ──▶ [ 🔑 API Key Auth ]                  │
+  │                                                                            │
+  │              ──▶ [ ✅ Zod Validator ] ──▶ [ 🎛️ Controllers ]               │
+  │                                                                            │
+  │              ──▶ [ ⚠️ Error Handler ] ──▶  RESPONSE                        │
+  │                                                                            │
+  └────────┬──────────────┬──────────────┬──────────────┬──────────────────────┘
+           │              │              │              │
+           ▼              ▼              ▼              ▼
+═══════════════════════════════════════════════════════════════════════════════════
+ TIER 3 — RECOVERY DOMAIN SERVICES                     Core Business Logic
+═══════════════════════════════════════════════════════════════════════════════════
 
-    subgraph AI["AI Diagnostic Intelligence"]
-        Diagnosis["AI Diagnosis Service"]
-        Grok["xAI Grok — grok-2-latest"]
-        Fallback["Deterministic Heuristic Fallback"]
-        OutputSchema["Zod AI Output Schema"]
-    end
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │                                                                            │
+  │  ┌─────────────────────────────────────────────────────────────────────┐   │
+  │  │  📐 SCORING & DIAGNOSIS PIPELINE                                    │   │
+  │  │                                                                     │   │
+  │  │  [ Opportunity Scorer ]──▶[ AI Diagnosis ]──▶[ Zod Output Schema ] │   │
+  │  │     ROS 0–100 Score           ▼        ▼        Schema-Validated    │   │
+  │  │                          ┌────┴───┐ ┌──┴────┐                      │   │
+  │  │                          │🧠 Grok │ │📏 Det. │                      │   │
+  │  │                          │grok-2  │ │Fallbk │                      │   │
+  │  │                          └────────┘ └───────┘                      │   │
+  │  └─────────────────────────────────┬───────────────────────────────────┘   │
+  │                                    ▼                                       │
+  │  ┌─────────────────────────────────────────────────────────────────────┐   │
+  │  │  🛡️ POLICY & GUARDRAIL ENGINE  (7 Deterministic Precedence Rules)   │   │
+  │  │                                                                     │   │
+  │  │  Rule 1: SLA Expired ─────────────────────────────────▶ STOP       │   │
+  │  │  Rule 2: Hard-Prohibited Code ────────────────────────▶ STOP       │   │
+  │  │  Rule 3: Retry Ceiling (≥ 2) ─────────────────────────▶ MODIFY     │   │
+  │  │  Rule 4: Contact Ceiling (≥ 2) ───────────────────────▶ STOP       │   │
+  │  │  Rule 5: High Value (≥ ₹50K) ─────────────────────────▶ ESCALATE  │   │
+  │  │  Rule 6: Low Confidence (< 0.65) ─────────────────────▶ ESCALATE  │   │
+  │  │  Rule 7: Default ─────────────────────────────────────▶ APPROVE    │   │
+  │  └──────────┬────────────────────────────────┬─────────────────────────┘   │
+  │             │ APPROVE / MODIFY               │ ESCALATE / STOP             │
+  │             ▼                                ▼                             │
+  │  ┌──────────────────────┐       ┌──────────────────────┐                   │
+  │  │ ⚙️ Workflow Engine    │       │ 👤 Human Review Queue │                   │
+  │  │ State Machine +      │       │ Operator Auth Modal   │                   │
+  │  │ Idempotency Guard    │       │                      │                   │
+  │  └─────────┬────────────┘       └──────────────────────┘                   │
+  │            │                                                               │
+  │     ┌──────┴──────┐                                                        │
+  │     ▼             ▼                                                        │
+  │  ┌────────────┐ ┌────────────────┐                                         │
+  │  │🚀 Bounded  │ │🎲 Deterministic│                                         │
+  │  │ Executor   │ │ Simulator      │                                         │
+  │  └─────┬──────┘ └───────┬────────┘                                         │
+  │        │                │                                                  │
+  │        └───────┬────────┘                                                  │
+  │                ▼                                                           │
+  │  ┌─────────────────────────────────────────────────────────────────────┐   │
+  │  │  📈 FINANCIAL ATTRIBUTION ENGINE                                    │   │
+  │  │                                                                     │   │
+  │  │  Revenue at Risk → Recovered → Remaining → Rate → Attainment      │   │
+  │  └─────────────────────────────────┬───────────────────────────────────┘   │
+  │                                    │                                       │
+  │                                    ▼                                       │
+  │  ┌─────────────────────────────────────────────────────────────────────┐   │
+  │  │  🔒 TAMPER-EVIDENT AUDIT SERVICE                                    │   │
+  │  │                                                                     │   │
+  │  │  Every decision, policy eval, action & outcome → SHA-256 chained   │   │
+  │  └─────────────────────────────────┬───────────────────────────────────┘   │
+  │                                    │                                       │
+  └────────────────────────────────────┼───────────────────────────────────────┘
+                                       │  Mongoose ODM
+                                       ▼
+═══════════════════════════════════════════════════════════════════════════════════
+ TIER 4 — PERSISTENCE LAYER                            MongoDB · 6 Collections
+═══════════════════════════════════════════════════════════════════════════════════
 
-    subgraph DB["Persistence Layer — MongoDB"]
-        Customers[("customers")]
-        Transactions[("transactions")]
-        Cases[("recovery_cases")]
-        Actions[("recovery_actions")]
-        Batches[("simulation_batches")]
-        AuditLogs[("audit_logs")]
-    end
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │                                                                            │
+  │  ┌────────────┐ ┌────────────────┐ ┌────────────────┐                     │
+  │  │ 👤          │ │ 💰              │ │ 📁              │                     │
+  │  │ customers  │ │ transactions   │ │ recovery_cases │                     │
+  │  └────────────┘ └────────────────┘ └────────────────┘                     │
+  │  ┌────────────────────┐ ┌──────────────────┐ ┌───────────────┐            │
+  │  │ ⚡                   │ │ 📦                │ │ 📜             │            │
+  │  │ recovery_actions   │ │ simulation_batch │ │ audit_logs    │            │
+  │  └────────────────────┘ └──────────────────┘ └───────────────┘            │
+  │                                                                            │
+  │  Index Strategy: { state: 1, recoveryScore: -1 } compound index           │
+  │                                                                            │
+  └─────────────────────────────────────────────────────────────────────────────┘
 
-    UI --> Router
+═══════════════════════════════════════════════════════════════════════════════════
+ TIER 5 — EXTERNAL AI INTELLIGENCE                     xAI Grok · grok-2-latest
+═══════════════════════════════════════════════════════════════════════════════════
 
-    Router --> RateLimiter
-    RateLimiter --> ApiKeyAuth
-    ApiKeyAuth --> ZodValidator
-    ZodValidator --> Controllers
-    Controllers --> ErrorHandler
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │                                                                            │
+  │  ┌──────────────────────────────┐    ┌──────────────────────────────┐      │
+  │  │ 🧠 xAI Grok (grok-2-latest) │    │ 📏 Deterministic Fallback    │      │
+  │  │                              │    │                              │      │
+  │  │ • Structured diagnosis       │    │ • No external dependency     │      │
+  │  │ • Recovery recommendations   │    │ • Reproducible results       │      │
+  │  │ • Channel-specific copy      │    │ • Schema-compatible output   │      │
+  │  │ • 3,500ms timeout guardrail  │    │ • Offline-capable            │      │
+  │  └──────────────────────────────┘    └──────────────────────────────┘      │
+  │                                                                            │
+  │  Mode Selection: AI_MODE = "live" | "deterministic"                        │
+  │                                                                            │
+  └─────────────────────────────────────────────────────────────────────────────┘
+```
 
-    Controllers --> Scorer
-    Controllers --> Diagnosis
-    Controllers --> Workflow
-    Controllers --> Analytics
-    Controllers --> Audit
+### Architecture Data Flow Summary
 
-    Scorer --> Diagnosis
-    Diagnosis --> Grok
-    Diagnosis --> Fallback
-    Grok --> OutputSchema
-    Fallback --> OutputSchema
-
-    OutputSchema --> Policy
-    Policy --> Workflow
-
-    Workflow --> Executor
-    Workflow --> Simulator
-    Executor --> Analytics
-    Simulator --> Analytics
-
-    Analytics --> Audit
-    Executor --> Audit
-    Policy --> Audit
-    Workflow --> Audit
-
-    Scorer --> Cases
-    Workflow --> Cases
-    Executor --> Actions
-    Simulator --> Batches
-    Analytics --> Transactions
-    Audit --> AuditLogs
-
-    Cases --> Customers
-    Cases --> Transactions
-
-    CoreServices["Recovery Domain Services"] -.-> DB
+```
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│   Revenue    │     │    Risk      │     │      AI      │     │   Policy     │
+│   Event      │────▶│  Detection   │────▶│  Diagnosis   │────▶│  Guardrails  │
+│   Ingested   │     │  & ROS Score │     │  (Grok/Det.) │     │  (7 Rules)   │
+└──────────────┘     └──────────────┘     └──────────────┘     └──────┬───────┘
+                                                                      │
+                  ┌───────────────────────────────────────────────────┘
+                  │
+        ┌────────┴────────┐                           ┌──────────────┐
+        │  APPROVE/MODIFY │                           │   ESCALATE   │
+        │                 │                           │   /STOP      │
+        └────────┬────────┘                           └──────┬───────┘
+                 │                                           │
+                 ▼                                           ▼
+        ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+        │   Bounded    │     │  Financial   │     │  Human-in-   │
+        │  Execution   │────▶│ Attribution  │     │  the-Loop    │
+        │              │     │  & Metrics   │     │  Review      │
+        └──────────────┘     └──────┬───────┘     └──────────────┘
+                                    │
+                                    ▼
+                           ┌──────────────┐
+                           │  SHA-256     │
+                           │  Audit Trail │
+                           └──────────────┘
 ```
 
 ---

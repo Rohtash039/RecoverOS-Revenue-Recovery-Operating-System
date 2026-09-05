@@ -1,4 +1,4 @@
-import { startBatchRun, getBatchStatus, resumeBatchRun } from '../services/simulation/batchOrchestrator.js';
+import { startBatchRun, getBatchStatus, resumeBatchRun, abortActiveBatch } from '../services/simulation/batchOrchestrator.js';
 import { generateSeedDataset } from '../services/simulation/seedDataGenerator.js';
 import { ENV } from '../config/env.js';
 
@@ -54,7 +54,8 @@ export async function getSimulationBatchStatus(req, res, next) {
 
 export async function resetSimulation(req, res, next) {
   try {
-    const seed = req.body.seed || ENV.SIMULATION_SEED;
+    abortActiveBatch();
+    const seed = req.body?.seed || ENV.SIMULATION_SEED;
     const result = await generateSeedDataset(seed);
 
     res.json({
